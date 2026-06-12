@@ -1,20 +1,18 @@
 <?php
-$monthNames = [
-    '',
-    'Enero',
-    'Febrero',
-    'Marzo',
-    'Abril',
-    'Mayo',
-    'Junio',
-    'Julio',
-    'Agosto',
-    'Septiembre',
-    'Octubre',
-    'Noviembre',
-    'Diciembre'
-];
-$dayNames   = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
+/**
+ * @var int   $month
+ * @var int   $year
+ * @var int   $prevMonth
+ * @var int   $prevYear
+ * @var int   $nextMonth
+ * @var int   $nextYear
+ * @var int   $firstDay
+ * @var int   $daysInMonth
+ * @var array $events
+ */
+$monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
+               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+$dayNames   = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
 $today      = date('Y-m-d');
 ?>
 <div class="app-layout">
@@ -37,7 +35,7 @@ $today      = date('Y-m-d');
                 <?php endforeach; ?>
 
                 <?php
-                $offset = $firstDay - 1;
+                $offset        = $firstDay - 1;
                 $prevMonthDays = (int)date('t', mktime(0, 0, 0, $prevMonth, 1, $prevYear));
                 for ($i = $offset; $i > 0; $i--):
                     $ghostDay = $prevMonthDays - $i + 1;
@@ -83,8 +81,13 @@ $today      = date('Y-m-d');
     <aside class="day-panel" id="dayPanel">
         <div class="day-panel__header">
             <span class="day-panel__date" id="panelDate"></span>
-            <button class="day-panel__close" id="panelClose" aria-label="Cerrar">&#10005;</button>
+            <div class="day-panel__actions">
+                <button class="btn btn--primary btn--sm" id="btnAddAppointment">+ Turno</button>
+                <button class="day-panel__close" id="panelClose" aria-label="Cerrar">&#10005;</button>
+            </div>
         </div>
-        <div class="day-panel__body"></div>
+        <div class="day-panel__body" id="panelBody"></div>
     </aside>
 </div>
+
+<?php require __DIR__ . '/modal_appointment.php'; ?>

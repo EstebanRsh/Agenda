@@ -8,3 +8,17 @@ CREATE TABLE IF NOT EXISTS events (
     event_date DATE NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE TABLE IF NOT EXISTS appointments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50),
+    social_work VARCHAR(100),
+    payment DECIMAL(10,2),
+    doctor VARCHAR(100),
+    notes TEXT,
+    date DATE NOT NULL,
+    time_start TIME NOT NULL,
+    time_end TIME NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
