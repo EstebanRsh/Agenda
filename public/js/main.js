@@ -1,6 +1,9 @@
+// BASE_URL es inyectada por layout.php antes de cargar este script.
+// No se declara acá — ya existe en el scope global.
+
 const panel = document.getElementById("dayPanel");
 const panelDate = document.getElementById("panelDate");
-const panelBody = document.getElementById('panelBody');
+const panelBody = document.getElementById("panelBody");
 const closeBtn = document.getElementById("panelClose");
 const layout = document.querySelector(".app-layout");
 let activeDay = null;
@@ -35,12 +38,18 @@ function closePanel() {
   activeDay = null;
 }
 
-// — Turnos —
+// — Turnos ——————————————————————————————————————————————————————————
+
 async function loadAppointments(date) {
   panelBody.innerHTML = '<p class="panel-loading">Cargando...</p>';
-  const res = await fetch(`/?action=list&date=${date}`);
-  const data = await res.json();
-  renderAppointments(data);
+  try {
+    const res = await fetch(`${BASE_URL}/?action=list&date=${date}`);
+    const data = await res.json();
+    renderAppointments(data);
+  } catch (err) {
+    panelBody.innerHTML = '<p class="panel-empty">Error al cargar turnos.</p>';
+    console.error("loadAppointments:", err);
+  }
 }
 
 function renderAppointments(list) {
@@ -93,13 +102,18 @@ function renderAppointments(list) {
 }
 
 async function deleteAppointment(id) {
-  const fd = new FormData();
-  fd.append("id", id);
-  await fetch("/?action=delete", { method: "POST", body: fd });
-  loadAppointments(activeDay);
+  try {
+    const fd = new FormData();
+    fd.append("id", id);
+    await fetch(`${BASE_URL}/?action=delete`, { method: "POST", body: fd });
+    loadAppointments(activeDay);
+  } catch (err) {
+    console.error("deleteAppointment:", err);
+  }
 }
 
-// — Modal —
+// — Modal ———————————————————————————————————————————————————————————
+
 const modal = document.getElementById("modalOverlay");
 const modalDate = document.getElementById("modalDate");
 const modalClose = document.getElementById("modalClose");
@@ -156,15 +170,30 @@ modalSave.addEventListener("click", async () => {
     return;
   }
 
-  const res = await fetch("/?action=create", { method: "POST", body: fd });
-  const data = await res.json();
-  if (data.success) {
-    closeModal();
-    loadAppointments(activeDay);
+  try {
+    const res = await fetch(`${BASE_URL}/?action=create`, {
+      method: "POST",
+      body: fd,
+    });
+    const data = await res.json();
+    if (data.success) {
+      closeModal();
+      loadAppointments(activeDay);
+    } else {
+      alert("No se pudo guardar el turno. Revisá la consola.");
+      console.error("create response:", data);
+    }
+  } catch (err) {
+    // Si todavía falla acá, el servidor no está devolviendo JSON.
+    // Abrí F12 → Network → la request a /?action=create → pestaña Response
+    // para ver exactamente qué devuelve PHP.
+    console.error("modalSave fetch error:", err);
+    alert("Error de red o respuesta inválida del servidor. Ver consola.");
   }
 });
 
-// — Utils —
+// — Utils ———————————————————————————————————————————————————————————
+
 function formatDate(dateStr) {
   const [y, m, d] = dateStr.split("-");
   const months = [
