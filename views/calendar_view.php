@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @var int   $month
  * @var int   $year
@@ -10,9 +11,22 @@
  * @var int   $daysInMonth
  * @var array $events
  */
-$monthNames = ['','Enero','Febrero','Marzo','Abril','Mayo','Junio',
-               'Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-$dayNames   = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+$monthNames = [
+    '',
+    'Enero',
+    'Febrero',
+    'Marzo',
+    'Abril',
+    'Mayo',
+    'Junio',
+    'Julio',
+    'Agosto',
+    'Septiembre',
+    'Octubre',
+    'Noviembre',
+    'Diciembre'
+];
+$dayNames   = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'];
 $today      = date('Y-m-d');
 ?>
 <div class="app-layout">
@@ -57,8 +71,13 @@ $today      = date('Y-m-d');
                         <span class="cell__number"><?= $d ?></span>
                         <?php if ($hasEvent): ?>
                             <div class="cell__events">
-                                <?php foreach ($events[$dateKey] as $ev): ?>
-                                    <span class="cell__event-dot" title="<?= htmlspecialchars($ev['title']) ?>"></span>
+                                <?php foreach ($events[$dateKey] as $st):
+                                    // Normalizamos el nombre del estado para la clase CSS (ej: "En atención" -> "en-atencion")
+                                    $statusSlug = strtolower(str_replace([' ', 'ó', 'á', 'é', 'í', 'ú'], ['-', 'o', 'a', 'e', 'i', 'u'], $st['status']));
+                                ?>
+                                    <span class="cell__status-badge cell__status-badge--<?= $statusSlug ?>" title="<?= htmlspecialchars($st['status']) ?>: <?= $st['total'] ?>">
+                                        <?= $st['total'] ?>
+                                    </span>
                                 <?php endforeach; ?>
                             </div>
                         <?php endif; ?>

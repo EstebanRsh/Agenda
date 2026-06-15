@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS appointments (
     payment DECIMAL(10,2),
     doctor VARCHAR(100),
     notes TEXT,
+    status ENUM('Pendiente', 'Confirmado', 'En atención', 'Finalizado', 'Cancelado', 'Ausente') NOT NULL DEFAULT 'Pendiente',
     date DATE NOT NULL,
     time_start TIME NOT NULL,
     time_end TIME NOT NULL,

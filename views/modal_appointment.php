@@ -43,6 +43,19 @@
             </div>
             <div class="form-row">
                 <div class="form-group form-group--full">
+                    <label for="appointmentStatus">Estado del Turno</label>
+                    <select id="appointmentStatus" class="form-select">
+                        <option value="Pendiente" selected>Pendiente</option>
+                        <option value="Confirmado">Confirmado</option>
+                        <option value="En atención">En atención</option>
+                        <option value="Finalizado">Finalizado</option>
+                        <option value="Cancelado">Cancelado</option>
+                        <option value="Ausente">Ausente</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group form-group--full">
                     <label for="notes">Notas</label>
                     <textarea id="notes" rows="3" placeholder="Observaciones..."></textarea>
                 </div>

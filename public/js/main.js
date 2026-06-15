@@ -66,6 +66,7 @@ function renderAppointments(list) {
                 <span class="appointment-card__time">${a.time_start.slice(0, 5)} — ${a.time_end.slice(0, 5)}</span>
                 <span class="appointment-card__name">${a.patient_name}</span>
                 <span class="appointment-card__doctor">${a.doctor || "—"}</span>
+                <span class="status-badge status-badge--${slugify(a.status)}">${a.status}</span>
                 <button class="appointment-card__toggle" aria-label="Ver detalle">&#8250;</button>
             </div>
             <div class="appointment-card__detail">
@@ -148,6 +149,7 @@ function clearModal() {
     "doctor",
     "notes",
   ].forEach((id) => (document.getElementById(id).value = ""));
+  document.getElementById("appointmentStatus").value = "Pendiente";
 }
 
 modalSave.addEventListener("click", async () => {
@@ -163,6 +165,7 @@ modalSave.addEventListener("click", async () => {
   fd.append("payment", document.getElementById("payment").value || 0);
   fd.append("doctor", document.getElementById("doctor").value.trim());
   fd.append("notes", document.getElementById("notes").value.trim());
+  fd.append("status", document.getElementById("appointmentStatus").value);
   fd.append("date", activeDay);
 
   if (!fd.get("patient_name") || !fd.get("time_start") || !fd.get("time_end")) {
@@ -212,4 +215,13 @@ function formatDate(dateStr) {
     "Diciembre",
   ];
   return `${parseInt(d)} de ${months[parseInt(m)]} ${y}`;
+}
+
+function slugify(text) {
+  return text
+    .toString()
+    .toLowerCase()
+    .replace(/\s+/g, "-") // Reemplaza espacios por guiones
+    .replace(/[^\w\-]+/g, "") // Elimina caracteres especiales
+    .replace(/\-\-+/g, "-"); // Reemplaza múltiples guiones
 }

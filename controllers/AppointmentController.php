@@ -31,6 +31,7 @@ class AppointmentController
                 'payment'      => floatval($_POST['payment']  ?? 0),
                 'doctor'       => trim($_POST['doctor']       ?? ''),
                 'notes'        => trim($_POST['notes']        ?? ''),
+                'status'       => trim($_POST['status']       ?? 'Pendiente'),
                 'date'         => $_POST['date']              ?? '',
                 'time_start'   => $_POST['time_start']        ?? '',
                 'time_end'     => $_POST['time_end']          ?? '',
