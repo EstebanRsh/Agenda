@@ -184,7 +184,7 @@ body {
   font-weight: 700;
   line-height: 1;
   user-select: none;
-  cursor: default;
+  cursor: pointer;
   flex-shrink: 0;
   transition: transform 0.1s ease;
 }
@@ -229,7 +229,7 @@ body {
 }
 
 .calendar__cell--active {
-  cursor: pointer;
+  cursor: default;
 }
 .calendar__cell--selected {
   outline: 2px solid var(--color-text);

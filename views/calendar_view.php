@@ -72,10 +72,13 @@ $today      = date('Y-m-d');
                         <?php if ($hasEvent): ?>
                             <div class="cell__events">
                                 <?php foreach ($events[$dateKey] as $st):
-                                    // Normalizamos el nombre del estado para la clase CSS (ej: "En atención" -> "en-atencion")
+                                    // Normalizamos el nombre del estado para la clase CSS de manera segura
                                     $statusSlug = strtolower(str_replace([' ', 'ó', 'á', 'é', 'í', 'ú'], ['-', 'o', 'a', 'e', 'i', 'u'], $st['status']));
                                 ?>
-                                    <span class="cell__status-badge cell__status-badge--<?= $statusSlug ?>" title="<?= htmlspecialchars($st['status']) ?>: <?= $st['total'] ?>">
+                                    <span class="cell__status-badge cell__status-badge--<?= $statusSlug ?>"
+                                        data-status="<?= $statusSlug ?>"
+                                        data-date="<?= $dateKey ?>"
+                                        title="<?= htmlspecialchars($st['status']) ?>: <?= $st['total'] ?>">
                                         <?= $st['total'] ?>
                                     </span>
                                 <?php endforeach; ?>

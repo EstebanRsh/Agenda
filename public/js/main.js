@@ -7,25 +7,79 @@ const panelBody = document.getElementById("panelBody");
 const closeBtn = document.getElementById("panelClose");
 const layout = document.querySelector(".app-layout");
 let activeDay = null;
+let currentFilterStatus = null; // Almacena el filtro activo
 
+// Evento para clics generales en las celdas del calendario
 document.querySelectorAll(".calendar__cell--active").forEach((cell) => {
   cell.addEventListener("click", () => {
     const date = cell.dataset.date;
-    if (activeDay === date && panel.classList.contains("is-open")) {
+    if (
+      activeDay === date &&
+      panel.classList.contains("is-open") &&
+      !currentFilterStatus
+    ) {
       closePanel();
     } else {
-      document
-        .querySelectorAll(".calendar__cell--selected")
-        .forEach((c) => c.classList.remove("calendar__cell--selected"));
-      cell.classList.add("calendar__cell--selected");
-      activeDay = date;
-      panelDate.textContent = formatDate(date);
-      panel.classList.add("is-open");
-      layout.classList.add("panel-open");
-      loadAppointments(date);
+      openPanelForDate(cell, date, null); // Abre sin filtros
     }
   });
 });
+
+// ESCUCHA DE CLICS EN LOS CÍRCULOS DE ESTADO (Filtrado Dinámico)
+document.querySelectorAll(".cell__status-badge").forEach((badge) => {
+  badge.addEventListener("click", (e) => {
+    e.stopPropagation(); // Evitamos que el clic se propague a la celda contenedora
+
+    const date = badge.dataset.date;
+    const status = badge.dataset.status;
+    const cell = badge.closest(".calendar__cell--active");
+
+    openPanelForDate(cell, date, status); // Abre aplicando el filtro
+  });
+
+  // GLOBO INFORMATIVO CONTEXTUAL (Tooltip Dinámico de Pacientes)
+  badge.addEventListener("mouseenter", async () => {
+    if (badge.dataset.loadedNames) return;
+
+    const date = badge.dataset.date;
+    const status = badge.dataset.status;
+    const originalTitle = badge.getAttribute("title");
+
+    try {
+      const res = await fetch(`${BASE_URL}/?action=list&date=${date}`);
+      const data = await res.json();
+
+      const filtered = data.filter((a) => slugify(a.status) === status);
+      const names = filtered.map((a) => a.patient_name).join(", ");
+
+      if (names) {
+        badge.setAttribute("title", `${originalTitle} \n(${names})`);
+        badge.dataset.loadedNames = "true";
+      }
+    } catch (err) {
+      console.error("Error al cargar tooltip dinámico:", err);
+    }
+  });
+});
+
+function openPanelForDate(cell, date, statusFilter) {
+  document
+    .querySelectorAll(".calendar__cell--selected")
+    .forEach((c) => c.classList.remove("calendar__cell--selected"));
+
+  cell.classList.add("calendar__cell--selected");
+  activeDay = date;
+  currentFilterStatus = statusFilter;
+
+  const dateFormatted = formatDate(date);
+  panelDate.innerHTML = statusFilter
+    ? `${dateFormatted} <span style="font-size:0.8rem; font-weight:normal; display:block; color:#666;">Filtrado por: ${statusFilter.replace("-", " ")}</span>`
+    : dateFormatted;
+
+  panel.classList.add("is-open");
+  layout.classList.add("panel-open");
+  loadAppointments(date, statusFilter);
+}
 
 closeBtn.addEventListener("click", closePanel);
 
@@ -36,16 +90,22 @@ function closePanel() {
     .querySelectorAll(".calendar__cell--selected")
     .forEach((c) => c.classList.remove("calendar__cell--selected"));
   activeDay = null;
+  currentFilterStatus = null;
 }
 
 // — Turnos ——————————————————————————————————————————————————————————
 
-async function loadAppointments(date) {
+async function loadAppointments(date, filterStatus = null) {
   panelBody.innerHTML = '<p class="panel-loading">Cargando...</p>';
   try {
     const res = await fetch(`${BASE_URL}/?action=list&date=${date}`);
     const data = await res.json();
-    renderAppointments(data);
+
+    const dataToRender = filterStatus
+      ? data.filter((a) => slugify(a.status) === filterStatus)
+      : data;
+
+    renderAppointments(dataToRender);
   } catch (err) {
     panelBody.innerHTML = '<p class="panel-empty">Error al cargar turnos.</p>';
     console.error("loadAppointments:", err);
@@ -55,7 +115,7 @@ async function loadAppointments(date) {
 function renderAppointments(list) {
   if (!list.length) {
     panelBody.innerHTML =
-      '<p class="panel-empty">Sin turnos para este día.</p>';
+      '<p class="panel-empty">Sin turnos para este criterio o día.</p>';
     return;
   }
   panelBody.innerHTML = list
@@ -107,13 +167,14 @@ async function deleteAppointment(id) {
     const fd = new FormData();
     fd.append("id", id);
     await fetch(`${BASE_URL}/?action=delete`, { method: "POST", body: fd });
-    loadAppointments(activeDay);
+
+    loadAppointments(activeDay, currentFilterStatus);
   } catch (err) {
     console.error("deleteAppointment:", err);
   }
 }
 
-// — Modal ———————————————————————————————————————————————————————————
+// — Modal —————————————————————————————————————————————————————————xx
 
 const modal = document.getElementById("modalOverlay");
 const modalDate = document.getElementById("modalDate");
@@ -181,15 +242,12 @@ modalSave.addEventListener("click", async () => {
     const data = await res.json();
     if (data.success) {
       closeModal();
-      loadAppointments(activeDay);
+      loadAppointments(activeDay, currentFilterStatus);
     } else {
       alert("No se pudo guardar el turno. Revisá la consola.");
       console.error("create response:", data);
     }
   } catch (err) {
-    // Si todavía falla acá, el servidor no está devolviendo JSON.
-    // Abrí F12 → Network → la request a /?action=create → pestaña Response
-    // para ver exactamente qué devuelve PHP.
     console.error("modalSave fetch error:", err);
     alert("Error de red o respuesta inválida del servidor. Ver consola.");
   }
@@ -221,7 +279,7 @@ function slugify(text) {
   return text
     .toString()
     .toLowerCase()
-    .replace(/\s+/g, "-") // Reemplaza espacios por guiones
-    .replace(/[^\w\-]+/g, "") // Elimina caracteres especiales
-    .replace(/\-\-+/g, "-"); // Reemplaza múltiples guiones
+    .replace(/\s+/g, "-")
+    .replace(/[^\w\-]+/g, "")
+    .replace(/\-\-+/g, "-");
 }
