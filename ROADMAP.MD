@@ -1,104 +1,289 @@
-# Mejoras de Lógica de Interacción y Experiencia Visual en la Agenda
+# Flujo completo de atención del paciente
 
 ## Objetivo
 
-El objetivo de esta mejora es llevar el sistema de estados actual hacia una interfaz más dinámica, inteligente e interactiva. Se busca optimizar el flujo de trabajo diario de médicos y recepcionistas mediante la incorporación de respuestas en tiempo real, accesos directos por estados, ordenamiento lógico estructural y consistencia en el volumen de datos mostrados en la vista mensual.
+El objetivo de esta mejora es permitir que el sistema represente de forma precisa el recorrido administrativo de un paciente desde el momento en que solicita un turno hasta que finaliza su consulta médica.
+
+Actualmente la agenda permite visualizar los turnos programados y su estado general. Sin embargo, no refleja qué está ocurriendo en tiempo real dentro del centro médico.
+
+La implementación de un flujo de atención permitirá que recepcionistas y profesionales conozcan en todo momento la situación actual de cada paciente.
+
+Esta funcionalidad transforma la agenda en una herramienta operativa capaz de gestionar el trabajo diario de recepción y consultorio.
 
 ---
 
 ## Problema que resuelve
 
-A pesar de contar con indicadores visuales en las celdas, la experiencia de usuario actual presenta las siguientes limitaciones de usabilidad:
+En un centro médico no alcanza con saber que existe un turno asignado.
 
-- **Falta de granularidad al abrir celdas:** Al interactuar con un día que contiene múltiples turnos, el panel lateral muestra toda la lista mezclada, obligando al usuario a filtrar visualmente o hacer scroll si la jornada es extensa.
-- **Opacidad informativa pre-clic:** El usuario debe abrir obligatoriamente el panel lateral para conocer qué pacientes específicos corresponden a los estados reflejados en el mes.
-- **Desconexión en las acciones:** Al modificar el estado de un turno dentro del panel de detalles, la vista de fondo del calendario mensual carece de una respuesta animada que confirme visualmente el impacto inmediato de la acción.
-- **Lectura mensual desorganizada:** Los círculos de estado varían su posición interna de un día a otro según el orden de inserción de los datos, dificultando la búsqueda sistemática por memoria espacial.
-- **Saturación por turnos inactivos:** El conteo mensual registra los turnos cancelados de la misma forma que los activos, transmitiendo una falsa percepción de alta ocupación en días con muchas bajas.
+Durante una jornada normal pueden ocurrir distintas situaciones:
 
----
+- Un paciente reservó un turno para una fecha futura.
+- Un paciente llegó al establecimiento y está esperando.
+- Un paciente ingresó al consultorio.
+- Un paciente finalizó su consulta.
+- Un paciente canceló.
+- Un paciente no asistió.
 
-## Solución propuesta
+Si la agenda solo almacena la fecha y hora del turno, no existe una representación clara de la situación actual del paciente.
 
-Implementar una capa superior de lógica de interacción y control de datos dividida en cuatro pilares de comportamiento:
-
-1. Filtrado dinámico por interacción directa en los círculos de la celda.
-2. Globos de información contextual instantánea al pasar el cursor (Tooltips).
-3. Transiciones visuales dinámicas para la actualización de estados.
-4. Organización estructural y filtrado de datos desde el motor de consultas.
+Esto obliga a médicos y recepcionistas a comunicarse constantemente para conocer el estado real de la atención.
 
 ---
 
-## Comportamiento dentro de la agenda
+## Concepto principal
 
-### Filtrado dinámico desde el calendario mensual
+Cada turno deberá avanzar a través de distintas etapas durante su ciclo de vida.
 
-Cuando el usuario interactúe con el calendario mensual, el sistema distinguirá el punto exacto de presión:
+El sistema deberá permitir modificar el estado del turno conforme avance la atención.
 
-- **Clic general en la celda:** El panel lateral derecho se abrirá mostrando de forma habitual la totalidad de los turnos programados para esa jornada.
-- **Clic específico en un círculo de estado:** El panel lateral derecho se abrirá con un filtro automático e inmediato ya aplicado. La interfaz ocultará el resto de las categorías y mostrará únicamente los turnos que pertenezcan a la condición seleccionada, reduciendo drásticamente la carga cognitiva y el tiempo de lectura.
+Flujo propuesto:
 
----
+Reservado
+↓
+En sala de espera
+↓
+En atención
+↓
+Finalizado
 
-### Globos informativos contextuales (Tooltips) al pasar el cursor
+Estados alternativos:
 
-Para agilizar la lectura de la agenda de escritorio sin necesidad de realizar clics o cambiar de contexto:
+Reservado
+↓
+Cancelado
 
-- Al posicionar el cursor del mouse sobre cualquier círculo numérico de estado en el mes, emergerá un sutil globo flotante de diseño minimalista.
-- Este globo procesará e indicará de forma textual y compacta qué pacientes específicos se encuentran bajo esa condición el día seleccionado, permitiendo una previsualización instantánea de la actividad del consultorio.
-
----
-
-## Comportamiento durante el flujo de trabajo
-
-### Animaciones de transición para cambios de estado en tiempo real
-
-Durante el flujo de edición en el panel lateral, el sistema mantendrá una sincronización interactiva y fluida con la vista general:
-
-- En el instante en que el recepcionista o médico guarde un cambio de estado para un paciente (por ejemplo, pasando de "Pendiente" a "En atención"), la celda de fondo del calendario mensual procesará la actualización de manera dinámica.
-- Los círculos numéricos involucrados experimentarán una breve transición física (como una pequeña escala de pulsación o un sutil destello visual) para confirmar la adición, resta o aparición del nuevo estado, otorgando feedback visual inmediato sin requerir recargas de página.
+Reservado
+↓
+Ausente
 
 ---
 
-### Ordenamiento estructural fijo de los indicadores por prioridad
+## Estados del flujo
 
-Para estandarizar la lectura visual a lo largo de todo el mes, los círculos numéricos mantendrán una posición inalterable dentro de su contenedor:
+### Reservado
 
-- El orden de aparición de los indicadores no dependerá de la secuencia de creación del turno ni del orden alfabético.
-- Se establecerá una jerarquía fija basada en la prioridad operativa de la jornada. El sistema imprimirá siempre en primer lugar los estados activos y críticos (como "En atención" y "Confirmado"), seguidos por las gestiones intermedias ("Pendiente") y desplazando hacia las últimas posiciones del bloque los estados históricos o pasivos ("Finalizado", "Ausente").
+Es el estado inicial.
+
+Se asigna automáticamente cuando se crea un turno.
+
+Representa que el paciente tiene un horario reservado dentro de la agenda.
+
+Características:
+
+- Ocupa un espacio horario.
+- Puede modificarse.
+- Puede cancelarse.
+- Todavía no llegó al establecimiento.
 
 ---
 
-### Exclusión de estados inactivos en el volumen mensual
+### En sala de espera
 
-Para garantizar que la densidad visual del calendario refleje con precisión el esfuerzo de atención real:
+Representa que el paciente ya llegó al centro médico y se encuentra esperando ser atendido.
 
-- Los turnos que transicionen al estado de "Cancelado" serán omitidos de la lógica de conteo que alimenta los círculos numéricos de las celdas mensuales.
-- Al liberar ese espacio horario, el indicador se reducirá o desaparecerá del mes, asegurando que los recepcionistas no perciban un día como ocupado o bloqueado cuando en realidad dispone de disponibilidad física real debido a las cancelaciones.
+La recepcionista podrá cambiar manualmente el estado cuando el paciente se registre al llegar.
+
+Características:
+
+- El paciente está presente.
+- Espera el llamado del profesional.
+- Permite conocer cuántas personas se encuentran actualmente en recepción.
+
+---
+
+### En atención
+
+Representa que el paciente ingresó al consultorio.
+
+Este estado puede ser asignado por:
+
+- La recepcionista.
+- El médico.
+- El propio sistema mediante una acción específica.
+
+Características:
+
+- El paciente ya no se encuentra en sala de espera.
+- Está ocupando el consultorio.
+- Permite visualizar qué paciente está siendo atendido actualmente.
+
+---
+
+### Finalizado
+
+Representa que la consulta terminó correctamente.
+
+Características:
+
+- El turno queda cerrado.
+- El horario ya fue utilizado.
+- Permite generar estadísticas futuras.
+- Permite mantener un historial administrativo.
+
+---
+
+### Cancelado
+
+Representa que el paciente notificó que no asistirá.
+
+Características:
+
+- Libera el horario.
+- Permite reasignar el turno.
+- Queda registrado para fines administrativos.
+
+---
+
+### Ausente
+
+Representa que el paciente no se presentó y tampoco canceló.
+
+Características:
+
+- El turno se considera perdido.
+- El horario no pudo reutilizarse.
+- Permite generar estadísticas de inasistencia.
+
+---
+
+## Cambios en la interfaz
+
+### Agenda diaria
+
+Cada turno deberá mostrar claramente su estado actual.
+
+Ejemplo conceptual:
+
+09:00 - Juan Pérez
+Estado: En sala de espera
+
+09:30 - María Gómez
+Estado: En atención
+
+10:00 - Carlos Fernández
+Estado: Finalizado
+
+El objetivo es que el usuario comprenda la situación actual sin abrir el turno.
+
+---
+
+### Acciones rápidas
+
+Cada turno deberá disponer de acciones rápidas para avanzar en el flujo.
+
+Ejemplos:
+
+- Marcar como "En sala de espera".
+- Marcar como "En atención".
+- Marcar como "Finalizado".
+- Marcar como "Ausente".
+- Marcar como "Cancelado".
+
+Estas acciones deben requerir la menor cantidad posible de clics.
+
+---
+
+## Panel operativo del día
+
+El sistema puede incorporar un pequeño resumen operativo.
+
+Información sugerida:
+
+- Pacientes programados.
+- Pacientes en espera.
+- Pacientes en atención.
+- Pacientes atendidos.
+- Cancelaciones.
+- Ausencias.
+
+Este panel permite conocer el estado general de la jornada sin revisar cada turno individualmente.
+
+---
+
+## Vista para el médico
+
+El profesional debería poder visualizar rápidamente:
+
+Paciente actual.
+Próximo paciente.
+Pacientes esperando.
+
+Ejemplo conceptual:
+
+Paciente actual:
+Juan Pérez
+
+Próximo:
+María Gómez
+
+En sala de espera:
+3 pacientes
+
+Esta información mejora la organización del consultorio y reduce interrupciones con recepción.
+
+---
+
+## Historial del flujo
+
+Cada cambio de estado puede quedar registrado.
+
+Ejemplo:
+
+14/06/2026 09:00
+Turno creado.
+
+14/06/2026 08:55
+Paciente llegó a recepción.
+
+14/06/2026 09:05
+Paciente ingresó al consultorio.
+
+14/06/2026 09:28
+Consulta finalizada.
+
+Este historial permite reconstruir el recorrido completo del paciente dentro del sistema.
 
 ---
 
 ## Beneficios para recepción
 
-- **Navegación quirúrgica:** Permite saltar directamente a listas específicas de pacientes confirmados o en espera con un solo toque desde el mes.
-- **Agilidad informativa:** Facilita conocer qué personas integran un estado de un vistazo rápido con el puntero del mouse, ideal durante llamadas telefónicas.
-- **Claridad de espacios libres:** Al no contabilizar las cancelaciones en los círculos mensuales, se identifican de manera inmediata los días reales con huecos disponibles para reasignación.
-- **Automatización de búsqueda:** La posición fija de cada círculo crea una rutina visual que permite saber qué estado falta o está activo mediante memoria espacial, sin necesidad de leer etiquetas.
+- Permite conocer quién llegó.
+- Reduce consultas entre recepción y consultorio.
+- Facilita la organización diaria.
+- Permite detectar retrasos.
+- Mejora la coordinación general.
 
 ---
 
 ## Beneficios para el médico
 
-- **Seguimiento del flujo de sala:** Permite monitorear desde la vista mensual el progreso de su jornada de forma dinámica a medida que los círculos cambian de color y reaccionan a las transiciones del panel.
-- **Enfoque inmediato:** Al abrir el panel con filtros automáticos, visualiza al instante solo los pacientes que están listos en sala de espera o bajo atención, aislando el historial administrativo del día.
+- Permite conocer quién está esperando.
+- Permite visualizar el próximo paciente.
+- Reduce interrupciones administrativas.
+- Mejora la gestión del tiempo.
+
+---
+
+## Beneficios para el sistema
+
+- Convierte una agenda pasiva en una herramienta operativa.
+- Genera información útil para estadísticas futuras.
+- Mejora la experiencia de uso.
+- Aumenta el valor profesional del proyecto.
 
 ---
 
 ## Complejidad de implementación
 
+Complejidad: baja a media.
+
 Requiere:
 
-1. Interceptar el evento de selección en los badges individuales deteniendo la propagación hacia el contenedor mayor.
-2. Modificar la rutina de renderizado de la lista del panel lateral para admitir un parámetro de filtrado por estado.
-3. Incorporar eventos de escucha para el ingreso y egreso del cursor del mouse que controlen la visibilidad de los globos informativos.
-4. Ajustar la consulta de obtención mensual de turnos para omitir los registros inactivos y definir una secuencia lógica fija mediante prioridades del motor de base de datos.
+1. Extender el catálogo de estados.
+2. Adaptar la base de datos.
+3. Incorporar controles para cambiar estados.
+4. Mostrar información contextual en la agenda.
+5. Agregar indicadores operativos básicos.
+
+El impacto funcional es alto porque permite representar el funcionamiento real de un centro médico utilizando una estructura relativamente simple.
