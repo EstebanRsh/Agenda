@@ -6,10 +6,22 @@ require_once __DIR__ . '/controllers/AppointmentController.php';
 
 $action = $_GET['action'] ?? '';
 
-if (in_array($action, ['list', 'create', 'delete'])) {
+if (
+    in_array(
+        $action,
+        [
+            'list',
+            'create',
+            'delete',
+            'update_status',
+            'history'
+        ]
+    )
+) {
     $controller = new AppointmentController();
     $controller->handleRequest();
-} else {
-    $controller = new CalendarController();
-    $controller->index();
+    exit;
 }
+
+$controller = new CalendarController();
+$controller->index();

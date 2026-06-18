@@ -12,10 +12,7 @@ class AppointmentController
 
     public function handleRequest(): void
     {
-        // Captura cualquier output accidental (notices, warnings de AppointmentModel, etc.)
-        // antes de emitir JSON. Sin esto, un solo notice rompe el JSON.parse del cliente.
         ob_start();
-
         $action = $_GET['action'] ?? '';
 
         if ($action === 'list') {
@@ -31,12 +28,23 @@ class AppointmentController
                 'payment'      => floatval($_POST['payment']  ?? 0),
                 'doctor'       => trim($_POST['doctor']       ?? ''),
                 'notes'        => trim($_POST['notes']        ?? ''),
-                'status'       => trim($_POST['status']       ?? 'Pendiente'),
                 'date'         => $_POST['date']              ?? '',
                 'time_start'   => $_POST['time_start']        ?? '',
                 'time_end'     => $_POST['time_end']          ?? '',
+                'status'       => trim($_POST['status']       ?? 'Reservado'),
             ];
             $this->json(['success' => $this->model->create($data)]);
+        }
+
+        if ($action === 'update_status' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+            $id = intval($_POST['id'] ?? 0);
+            $status = trim($_POST['status'] ?? '');
+            $this->json(['success' => $this->model->updateStatus($id, $status)]);
+        }
+
+        if ($action === 'history') {
+            $id = intval($_GET['id'] ?? 0);
+            $this->json($this->model->getHistory($id));
         }
 
         if ($action === 'delete' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -45,13 +53,12 @@ class AppointmentController
         }
     }
 
-    // Descarta cualquier output acumulado y emite JSON limpio
     private function json(mixed $data, int $status = 200): void
     {
         ob_end_clean();
         http_response_code($status);
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE);
+        header('Content-Type: application/json');
+        echo json_encode($data);
         exit;
     }
 }

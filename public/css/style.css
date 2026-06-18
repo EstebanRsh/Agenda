@@ -371,14 +371,11 @@ body {
 }
 
 .appointment-card__row {
-  display: grid;
-  grid-template-columns: 100px 1fr 1fr 100px auto;
+  display: grid !important;
+  grid-template-columns: 60px 1.5fr 1fr 140px auto !important;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.75rem 0.25rem;
-  cursor: pointer;
-  transition: background 0.12s;
-  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
 }
 
 .appointment-card__row:hover {
@@ -657,6 +654,144 @@ body {
 .status-badge--ausente {
   background-color: #ffedd5;
   color: #ea580c;
+}
+
+.cell__status-badge,
+.appointment-card__row,
+.operativo-card,
+.select-flujo-cambio {
+  cursor: pointer;
+}
+
+/* Paneles de Control del Día */
+.panel-operativo,
+.panel-medico {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+.panel-operativo h4,
+.panel-medico h4 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-hover);
+  padding-bottom: 0.25rem;
+}
+.operativo-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.35rem;
+}
+.operativo-card {
+  background: var(--color-bg);
+  padding: 0.4rem;
+  text-align: center;
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+}
+.operativo-card span {
+  font-size: 0.6rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+}
+.operativo-card strong {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+.operativo-card--alert {
+  border-left: 3px solid #d97706;
+}
+.operativo-card--active {
+  border-left: 3px solid #1d4ed8;
+}
+
+.medico-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  margin-bottom: 0.3rem;
+}
+.medico-row strong {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.badge-espera {
+  background: #fef3c7;
+  color: #d97706;
+  padding: 0.05rem 0.4rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+/* Caja de Acción del Estado en Desplegable */
+.flujo-acciones {
+  background: var(--color-bg);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  margin-bottom: 0.75rem;
+  border-left: 3px solid var(--color-text);
+}
+.flujo-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--color-text);
+  display: block;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.select-flujo-cambio {
+  width: 100%;
+  padding: 0.35rem;
+  font-size: 0.85rem;
+  font-family: var(--font);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+}
+.select-flujo-cambio:focus {
+  border-color: var(--color-text);
+  outline: none;
+}
+
+/* Historial de Auditoría */
+.appointment-history-log {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--color-border);
+}
+.history-items {
+  font-size: 0.75rem;
+  color: var(--color-text);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-top: 0.3rem;
+}
+.hist-item span {
+  font-weight: 600;
+  color: #1d4ed8;
+}
+
+/* Normalización de badges adicionales */
+.status-badge--reservado {
+  background: #f3f4f6;
+  color: #4b5563;
+}
+.status-badge--en-sala-de-espera {
+  background: #fef3c7;
+  color: #d97706;
+}
+.status-badge--ausente {
+  background: #fee2e2;
+  color: #dc2626;
 }
 
 /* Media Query Responsiva (Sin llaves huérfanas) */

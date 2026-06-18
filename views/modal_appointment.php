@@ -43,10 +43,10 @@
             </div>
             <div class="form-row">
                 <div class="form-group form-group--full">
-                    <label for="appointmentStatus">Estado del Turno</label>
+                    <label for="appointmentStatus">Estado Inicial del Turno</label>
                     <select id="appointmentStatus" class="form-select">
-                        <option value="Pendiente" selected>Pendiente</option>
-                        <option value="Confirmado">Confirmado</option>
+                        <option value="Reservado" selected>Reservado</option>
+                        <option value="En sala de espera">En sala de espera</option>
                         <option value="En atención">En atención</option>
                         <option value="Finalizado">Finalizado</option>
                         <option value="Cancelado">Cancelado</option>

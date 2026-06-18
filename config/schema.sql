@@ -17,9 +17,18 @@ CREATE TABLE IF NOT EXISTS appointments (
     payment DECIMAL(10,2),
     doctor VARCHAR(100),
     notes TEXT,
-    status ENUM('Pendiente', 'Confirmado', 'En atención', 'Finalizado', 'Cancelado', 'Ausente') NOT NULL DEFAULT 'Pendiente',
+    status ENUM('Reservado', 'En sala de espera', 'En atención', 'Finalizado', 'Cancelado', 'Ausente') NOT NULL DEFAULT 'Reservado',
     date DATE NOT NULL,
     time_start TIME NOT NULL,
     time_end TIME NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS appointment_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    appointment_id INT NOT NULL,
+    status_from VARCHAR(50) NULL,
+    status_to VARCHAR(50) NOT NULL,
+    changed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id) ON DELETE CASCADE
 );
