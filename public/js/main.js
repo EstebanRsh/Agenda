@@ -6,6 +6,7 @@ const layout = document.querySelector(".app-layout");
 let activeDay = null;
 let currentFilterStatus = null;
 
+// Manejo de clics en celdas activas del calendario
 document.querySelectorAll(".calendar__cell--active").forEach((cell) => {
   cell.addEventListener("click", () => {
     const date = cell.dataset.date;
@@ -21,6 +22,7 @@ document.querySelectorAll(".calendar__cell--active").forEach((cell) => {
   });
 });
 
+// Manejo de clics y hover en los badges de estado del calendario
 document.querySelectorAll(".cell__status-badge").forEach((badge) => {
   badge.addEventListener("click", (e) => {
     e.stopPropagation();
@@ -51,6 +53,7 @@ document.querySelectorAll(".cell__status-badge").forEach((badge) => {
   });
 });
 
+// Abre el panel lateral para una fecha específica
 function openPanelForDate(cell, date, statusFilter) {
   document
     .querySelectorAll(".calendar__cell--selected")
@@ -71,6 +74,7 @@ function openPanelForDate(cell, date, statusFilter) {
 
 closeBtn.addEventListener("click", closePanel);
 
+// Cierra el panel lateral
 function closePanel() {
   panel.classList.remove("is-open");
   layout.classList.remove("panel-open");
@@ -81,13 +85,14 @@ function closePanel() {
   currentFilterStatus = null;
 }
 
+// Carga los turnos desde la API
 async function loadAppointments(date, filterStatus = null) {
   panelBody.innerHTML =
     '<p class="panel-loading">Cargando tablero operativo...</p>';
   try {
     const res = await fetch(`${BASE_URL}/?action=list&date=${date}`);
     const data = await res.json();
-    renderTableroYTurnos(data, filterStatus);
+    renderDashboardAndAppointments(data, filterStatus);
   } catch (err) {
     panelBody.innerHTML =
       '<p class="panel-empty">Error al cargar datos de la jornada.</p>';
@@ -95,56 +100,59 @@ async function loadAppointments(date, filterStatus = null) {
   }
 }
 
-function renderTableroYTurnos(allAppointments, filterStatus) {
-  const programados = allAppointments.filter(
+// Renderiza el control de consultorio y el listado de turnos
+function renderDashboardAndAppointments(allAppointments, filterStatus) {
+  const scheduledCount = allAppointments.filter(
     (a) => a.status !== "Cancelado",
   ).length;
-  const enEspera = allAppointments.filter(
+  const waitingList = allAppointments.filter(
     (a) => a.status === "En sala de espera",
   );
-  const enAtencion = allAppointments.filter((a) => a.status === "En atención");
-  const atendidos = allAppointments.filter(
+  const inProgressList = allAppointments.filter(
+    (a) => a.status === "En atención",
+  );
+  const completedCount = allAppointments.filter(
     (a) => a.status === "Finalizado",
   ).length;
-  const cancelados = allAppointments.filter(
+  const cancelledCount = allAppointments.filter(
     (a) => a.status === "Cancelado",
   ).length;
 
-  const pacienteActual =
-    enAtencion.length > 0
-      ? enAtencion[0].patient_name
+  const currentPatient =
+    inProgressList.length > 0
+      ? inProgressList[0].patient_name
       : "Ninguno (Consultorio libre)";
-  const proximos = allAppointments.filter(
+  const upcomingAppointments = allAppointments.filter(
     (a) => a.status === "En sala de espera" || a.status === "Reservado",
   );
-  const proximoPaciente =
-    proximos.length > 0
-      ? proximos[0].patient_name
+  const nextPatient =
+    upcomingAppointments.length > 0
+      ? upcomingAppointments[0].patient_name
       : "No hay más pacientes agendados";
 
-  const turnosMostrados = filterStatus
+  const displayedAppointments = filterStatus
     ? allAppointments.filter((a) => slugify(a.status) === filterStatus)
     : allAppointments;
 
   let html = `
     <div class="panel-medico">
         <h4>Control de Consultorio</h4>
-        <div class="medico-row"><strong>Actual:</strong> <span>${pacienteActual}</span></div>
-        <div class="medico-row"><strong>Siguiente:</strong> <span>${proximoPaciente}</span></div>
-        <div class="medico-row"><strong>En Espera:</strong> <span class="badge-espera">${enEspera.length} pacientes</span></div>
+        <div class="medico-row"><strong>Actual:</strong> <span>${currentPatient}</span></div>
+        <div class="medico-row"><strong>Siguiente:</strong> <span>${nextPatient}</span></div>
+        <div class="medico-row"><strong>En Espera:</strong> <span class="badge-espera">${waitingList.length} pacientes</span></div>
     </div>
 
     <h4 style="margin: 1rem 0 0.5rem 0; font-size:0.85rem; text-transform:uppercase; color:#666;">Listado de Turnos</h4>
   `;
 
-  if (!turnosMostrados.length) {
+  if (!displayedAppointments.length) {
     html += '<p class="panel-empty">Sin pacientes para este estado.</p>';
     panelBody.innerHTML = html;
     return;
   }
 
-  // Lista de estados para renderizar el desplegable dinámico
-  const estadosEnum = [
+  // Lista de estados para el desplegable dinámico
+  const statusEnum = [
     "Reservado",
     "En sala de espera",
     "En atención",
@@ -153,49 +161,50 @@ function renderTableroYTurnos(allAppointments, filterStatus) {
     "Ausente",
   ];
 
-  html += turnosMostrados
+  html += displayedAppointments
     .map(
       (a) => `
-    <div class="appointment-card" data-id="${a.id}">
-        <div class="appointment-card__row">
-            <span class="appointment-card__time">${a.time_start.slice(0, 5)}</span>
-            <span class="appointment-card__name">${a.patient_name}</span>
-            <span class="appointment-card__doctor">${a.doctor || "—"}</span>
-            <span class="status-badge status-badge--${slugify(a.status)}">${a.status}</span>
-            <button class="appointment-card__toggle" aria-label="Ver detalle">&#8250;</button>
+<div class="appointment-card" data-id="${a.id}">
+    <div class="appointment-card__row">
+        <span class="appointment-card__time">${a.time_start.slice(0, 5)}</span>
+        <span class="appointment-card__name">${a.patient_name}</span>
+        <span class="appointment-card__doctor">${a.doctor || "—"}</span>
+        <div class="appointment-card__status badge-">
+            <select class="form-select select-flujo-cambio" id="select-flujo-${a.id}" data-id="${a.id}">
+                ${statusEnum.map((status) => `<option value="${status}" ${a.status === status ? "selected" : ""}>${status}</option>`).join("")}
+            </select>
         </div>
+        <button class="btn-ver-detalles appointment-card__toggle" data-id="${a.id}">
+            Ver detalles
+        </button>
+    </div>
+    
+    <div class="appointment-card__detail">
+        <div class="detail-row"><span class="detail-label">Obra social</span><span>${a.social_work || "—"}</span></div>
+        <div class="detail-row"><span class="detail-label">Notas</span><span>${a.notes || "—"}</span></div>
         
-        <div class="appointment-card__detail">
-            <div class="flujo-acciones">
-                <label class="flujo-label" for="select-flujo-${a.id}">Cambiar Estado del Paciente:</label>
-                <select class="form-select select-flujo-cambio" id="select-flujo-${a.id}" data-id="${a.id}">
-                    ${estadosEnum.map((est) => `<option value="${est}" ${a.status === est ? "selected" : ""}>${est}</option>`).join("")}
-                </select>
-            </div>
+        <div class="appointment-history-log" id="histLog-${a.id}">
+            <span class="detail-label">Línea de Tiempo del Paciente:</span>
+            <div class="history-items">Cargando recorrido...</div>
+        </div>
 
-            <div class="detail-row"><span class="detail-label">Obra social</span><span>${a.social_work || "—"}</span></div>
-            <div class="detail-row"><span class="detail-label">Notas</span><span>${a.notes || "—"}</span></div>
-            
-            <div class="appointment-history-log" id="histLog-${a.id}">
-                <span class="detail-label">Línea de Tiempo del Paciente:</span>
-                <div class="history-items">Cargando recorrido...</div>
-            </div>
-
-            <div class="detail-actions" style="margin-top:0.75rem;">
-                <button class="btn btn--danger btn--sm appointment-card__delete" data-id="${a.id}">Eliminar</button>
-            </div>
+        <div class="detail-actions" style="margin-top:0.75rem;">
+            <button class="btn btn--danger btn--sm appointment-card__delete" data-id="${a.id}">Eliminar</button>
         </div>
     </div>
+</div>
   `,
     )
     .join("");
 
   panelBody.innerHTML = html;
 
-  // Manejo de clicks para expandir la tarjeta
-  panelBody.querySelectorAll(".appointment-card__row").forEach((row) => {
-    row.addEventListener("click", () => {
-      const card = row.closest(".appointment-card");
+  // Manejo de clics para expandir/colapsar la tarjeta y mostrar detalles
+  panelBody.querySelectorAll(".appointment-card__toggle").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+
+      const card = btn.closest(".appointment-card");
       const isOpen = card.classList.contains("is-open");
 
       panelBody
@@ -209,13 +218,15 @@ function renderTableroYTurnos(allAppointments, filterStatus) {
     });
   });
 
-  // Evento del cambio en el Desplegable de Estados
+  // Evento para el cambio en el desplegable de estados
   panelBody.querySelectorAll(".select-flujo-cambio").forEach((select) => {
+    select.addEventListener("click", (e) => {
+      e.stopPropagation();
+    });
+
     select.addEventListener("change", async () => {
       const id = select.dataset.id;
       const targetStatus = select.value;
-
-      const card = select.closest(".appointment-card");
 
       console.group("CAMBIO DE ESTADO");
       console.log("Turno ID:", id);
@@ -235,11 +246,6 @@ function renderTableroYTurnos(allAppointments, filterStatus) {
 
         console.log("HTTP:", response.status);
 
-        const responseText = await response.text();
-
-        console.log("Respuesta servidor:");
-        console.log(responseText);
-
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}`);
         }
@@ -247,38 +253,17 @@ function renderTableroYTurnos(allAppointments, filterStatus) {
         console.log("Actualización OK");
 
         await loadAppointments(activeDay, currentFilterStatus);
-
-        // Reabrir la tarjeta automáticamente
-        setTimeout(() => {
-          const newCard = document.querySelector(
-            `.appointment-card[data-id="${id}"]`,
-          );
-
-          if (newCard) {
-            newCard.classList.add("is-open");
-
-            loadTimelineHistory(id);
-
-            newCard.scrollIntoView({
-              behavior: "smooth",
-              block: "center",
-            });
-
-            console.log("Tarjeta reabierta correctamente");
-          }
-        }, 100);
       } catch (error) {
         console.error("ERROR AL CAMBIAR ESTADO:", error);
-
         alert("No se pudo actualizar el estado.\n\n" + error.message);
       } finally {
         select.disabled = false;
-
         console.groupEnd();
       }
     });
   });
 
+  // Evento para eliminar un turno
   panelBody.querySelectorAll(".appointment-card__delete").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -287,6 +272,7 @@ function renderTableroYTurnos(allAppointments, filterStatus) {
   });
 }
 
+// Carga el historial de auditoría del turno
 async function loadTimelineHistory(id) {
   const container = document.querySelector(`#histLog-${id} .history-items`);
   if (!container) return;
@@ -308,6 +294,7 @@ async function loadTimelineHistory(id) {
   }
 }
 
+// Elimina un turno
 async function deleteAppointment(id) {
   try {
     const fd = new FormData();
@@ -396,6 +383,7 @@ modalSave.addEventListener("click", async () => {
   }
 });
 
+// Formatea las cadenas de fecha
 function formatDate(dateStr) {
   const [y, m, d] = dateStr.split("-");
   const months = [
@@ -416,6 +404,7 @@ function formatDate(dateStr) {
   return `${parseInt(d)} de ${months[parseInt(m)]} ${y}`;
 }
 
+// Convierte texto a formato slug para filtros URL/Dataset
 function slugify(text) {
   if (!text) return "";
   return text
@@ -426,21 +415,18 @@ function slugify(text) {
     .replace(/\-\-+/g, "-");
 }
 
+// Control global de errores
 window.addEventListener("error", (event) => {
   console.group("ERROR GLOBAL");
-
   console.error(event.message);
   console.error(event.filename);
   console.error(event.lineno);
   console.error(event.error);
-
   console.groupEnd();
 });
 
 window.addEventListener("unhandledrejection", (event) => {
   console.group("PROMESA RECHAZADA");
-
   console.error(event.reason);
-
   console.groupEnd();
 });

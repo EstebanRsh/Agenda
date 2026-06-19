@@ -347,6 +347,7 @@ body {
 
 /* Panel body */
 .day-panel__body {
+  cursor: default;
   padding: 1rem 1.25rem;
   overflow-y: auto;
   max-height: calc(100vh - 200px);
@@ -371,11 +372,12 @@ body {
 }
 
 .appointment-card__row {
-  display: grid !important;
-  grid-template-columns: 60px 1.5fr 1fr 140px auto !important;
+  display: grid;
+  grid-template-columns: 60px 1.5fr 1fr 140px auto;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
+  cursor: default;
 }
 
 .appointment-card__row:hover {
@@ -406,19 +408,34 @@ body {
   text-overflow: ellipsis;
 }
 
+/* Botón "Ver detalles" estilizado de forma explícita */
 .appointment-card__toggle {
-  background: none;
-  border: none;
-  font-size: 1rem;
-  color: var(--color-text-muted);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius);
   cursor: pointer;
-  padding: 0 0.25rem;
-  transition: transform 0.2s;
+  white-space: nowrap;
   line-height: 1;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
 }
 
+.appointment-card__toggle:hover {
+  background: var(--color-hover);
+  border-color: var(--color-text);
+}
+
+/* Estado visual invertido cuando la tarjeta está expandida */
 .appointment-card.is-open .appointment-card__toggle {
-  transform: rotate(90deg);
+  background: var(--color-text);
+  color: var(--color-surface);
+  border-color: var(--color-text);
 }
 
 /* Detalle de la Tarjeta */
@@ -635,7 +652,6 @@ body {
   color: #15803d;
 }
 
-/* Corregido para machear con un slugify estándar sin tildes */
 .status-badge--en-atencion {
   background-color: #dbeafe;
   color: #1d4ed8;
@@ -657,7 +673,6 @@ body {
 }
 
 .cell__status-badge,
-.appointment-card__row,
 .operativo-card,
 .select-flujo-cambio {
   cursor: pointer;
@@ -794,7 +809,7 @@ body {
   color: #dc2626;
 }
 
-/* Media Query Responsiva (Sin llaves huérfanas) */
+/* Media Query Responsiva */
 @media (max-width: 560px) {
   body {
     padding: 1rem;
@@ -803,7 +818,7 @@ body {
     --cell-min-h: 56px;
   }
   .calendar__cell {
-    justify-content: flex-start; /* Evita encimamientos en pantallas ultra chicas */
+    justify-content: flex-start;
     gap: 4px;
   }
   .calendar__title {
