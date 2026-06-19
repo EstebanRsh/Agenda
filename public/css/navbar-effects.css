@@ -177,3 +177,65 @@ body {
   overflow-y: auto;
   height: 100vh;
 }
+
+/* ==========================================================================
+   FONDO LÍQUIDO ANIMADO Y TARJETAS FLOTANTES (ELEVACIÓN UI)
+   ========================================================================== */
+
+/* 1. Fondo principal dinámico */
+.app-main-content {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 2.5rem;
+  overflow-y: auto;
+  height: 100vh;
+
+  /* Gradiente clínico: Transición de blancos a celestes y menta muy sutiles */
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f0f9ff 25%,
+    /* Celeste ultra claro */ #e0f2fe 50%,
+    /* Celeste suave */ #f0fdf4 75%,
+    /* Verde clínico imperceptible */ #ffffff 100%
+  );
+  background-size: 400% 400%;
+  /* Movimiento perpetuo e imperceptible */
+  animation: liquidBackground 18s ease-in-out infinite;
+}
+
+/* 2. Keyframes para la interpolación del gradiente */
+@keyframes liquidBackground {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* 3. Despegar el Calendario y el Panel del fondo (Efecto Flotante) */
+.calendar,
+.day-panel {
+  background-color: #ffffff !important; /* Mantiene tu estética minimalista blanca */
+  border: 1px solid rgba(0, 0, 0, 0.03) !important;
+
+  /* Sombra multicapa premium para dar profundidad sobre el líquido */
+  box-shadow:
+    0 12px 36px rgba(0, 119, 182, 0.04),
+    /* Reflejo azulado sutil */ 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+
+  border-radius: 12px;
+  position: relative;
+  z-index: 10;
+}
+
+/* Asegurar que el layout mantenga el espacio correcto */
+.app-layout {
+  margin-top: 1rem;
+}
