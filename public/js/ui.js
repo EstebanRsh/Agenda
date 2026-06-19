@@ -6,12 +6,16 @@ import {
   removeAppointment,
 } from "./api.js";
 import { formatDate, slugify } from "./utils.js";
-import { appState } from "./main.js"; // Importamos el estado global compartido
+import { appState } from "./main.js";
 
 const panel = document.getElementById("dayPanel");
 const panelDate = document.getElementById("panelDate");
 const panelBody = document.getElementById("panelBody");
 const layout = document.querySelector(".app-layout");
+
+// Variables internas de control para persistir los filtros en la sesión de la vista
+let appointmentSearchQuery = "";
+let appointmentFilterStatus = "todos";
 
 export function openPanelForDate(cell, date, statusFilter) {
   document
@@ -20,16 +24,17 @@ export function openPanelForDate(cell, date, statusFilter) {
   cell.classList.add("calendar__cell--selected");
 
   appState.activeDay = date;
-  appState.currentFilterStatus = statusFilter;
+
+  // Sincronizar el filtro si se hace click directo desde un badge del calendario
+  appointmentFilterStatus = statusFilter ? slugify(statusFilter) : "todos";
+  appointmentSearchQuery = "";
 
   const dateFormatted = formatDate(date);
-  panelDate.innerHTML = statusFilter
-    ? `${dateFormatted} <span style="font-size:0.8rem; font-weight:normal; display:block; color:#666;">Filtrado: ${statusFilter.replace("-", " ")}</span>`
-    : dateFormatted;
+  panelDate.innerHTML = dateFormatted;
 
   panel.classList.add("is-open");
   layout.classList.add("panel-open");
-  loadAppointments(date, statusFilter);
+  loadAppointments(date);
 }
 
 export function closePanel() {
@@ -39,117 +44,126 @@ export function closePanel() {
     .querySelectorAll(".calendar__cell--selected")
     .forEach((c) => c.classList.remove("calendar__cell--selected"));
   appState.activeDay = null;
-  appState.currentFilterStatus = null;
 }
 
-export async function loadAppointments(date, filterStatus = null) {
-  panelBody.innerHTML =
-    '<p class="panel-loading">Cargando tablero operativo...</p>';
+// Llama al servidor enviando los filtros actuales
+export async function loadAppointments(date) {
+  if (!date) return;
+
   try {
-    const data = await fetchAppointments(date);
-    renderDashboardAndAppointments(data, filterStatus);
-  } catch (err) {
-    panelBody.innerHTML =
-      '<p class="panel-empty">Error al cargar datos de la jornada.</p>';
-    console.error(err);
+    // PHP realiza la búsqueda y filtrado de manera segura en el servidor
+    const appointments = await fetchAppointments(
+      date,
+      appointmentSearchQuery,
+      appointmentFilterStatus,
+    );
+    renderAppointmentsList(appointments);
+  } catch (error) {
+    console.error(error);
+    panelBody.innerHTML = `<p class="panel-loading">Error al cargar turnos.</p>`;
   }
 }
 
-function renderDashboardAndAppointments(allAppointments, filterStatus) {
-  const waitingList = allAppointments.filter(
-    (a) => a.status === "En sala de espera",
-  );
-  const inProgressList = allAppointments.filter(
-    (a) => a.status === "En atención",
-  );
+function renderAppointmentsList(appointments) {
+  // 1. Inyectamos TODOS los filtros con un contenedor deslizable de forma limpia
+  let html = `
+    <div class="panel-controls" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+      <input type="text" id="appointmentSearch" placeholder="Buscar paciente o profesional..." value="${appointmentSearchQuery}" 
+        style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.85rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); outline: none;"
+      />
+      <div class="panel-filters" style="display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none;">
+        <button class="btn-filter ${appointmentFilterStatus === "todos" ? "active" : ""}" data-status="todos">Todos</button>
+        <button class="btn-filter ${appointmentFilterStatus === "reservado" ? "active" : ""}" data-status="reservado">Reservados</button>
+        <button class="btn-filter ${appointmentFilterStatus === "en-sala-de-espera" ? "active" : ""}" data-status="en-sala-de-espera">En Espera</button>
+        <button class="btn-filter ${appointmentFilterStatus === "en-atencion" ? "active" : ""}" data-status="en-atencion">En Atención</button>
+        <button class="btn-filter ${appointmentFilterStatus === "finalizado" ? "active" : ""}" data-status="finalizado">Finalizados</button>
+        <button class="btn-filter ${appointmentFilterStatus === "ausente" ? "active" : ""}" data-status="ausente">Ausentes</button>
+        <button class="btn-filter ${appointmentFilterStatus === "cancelado" ? "active" : ""}" data-status="cancelado">Cancelados</button>
+      </div>
+    </div>
+    <div id="appointmentsListContainer">
+  `;
 
-  const currentPatient =
-    inProgressList.length > 0
-      ? inProgressList[0].patient_name
-      : "Ninguno (Consultorio libre)";
-  const upcomingAppointments = allAppointments.filter(
-    (a) => a.status === "En sala de espera" || a.status === "Reservado",
-  );
-  const nextPatient =
-    upcomingAppointments.length > 0
-      ? upcomingAppointments[0].patient_name
-      : "No hay más pacientes agendados";
-
-  const displayedAppointments = filterStatus
-    ? allAppointments.filter((a) => slugify(a.status) === filterStatus)
-    : allAppointments;
-
-  let html = ``;
-
-  if (!displayedAppointments.length) {
-    html += '<p class="panel-empty">Sin pacientes para este estado.</p>';
+  if (!appointments || !appointments.length) {
+    html += `<p class="panel-empty">No se encontraron turnos con los filtros aplicados.</p></div>`;
     panelBody.innerHTML = html;
+    setupFilterListeners();
     return;
   }
 
-  const statusEnum = [
-    "Reservado",
-    "En sala de espera",
-    "En atención",
-    "Finalizado",
-    "Cancelado",
-    "Ausente",
-  ];
-
-  // Ordenar turnos: Primero por hora, luego por prioridad de estado clínico
-  const sortedAppointments = [...displayedAppointments].sort((a, b) => {
-    if (a.time_start !== b.time_start) {
-      return a.time_start.localeCompare(b.time_start);
-    }
-    // Si coinciden en la hora (sobreturno), mandamos los cancelados/ausentes al final
-    const priority = {
-      "En atención": 1,
-      "En sala de espera": 2,
-      Reservado: 3,
-      Finalizado: 4,
-      Ausente: 5,
-      Cancelado: 6,
-    };
-    return (priority[a.status] || 99) - (priority[b.status] || 99);
-  });
-
-  html += displayedAppointments
-    .map(
-      (a) => `
-    <div class="appointment-card" data-id="${a.id}">
+  // 2. Renderizamos los turnos devueltos directamente por PHP
+  appointments.forEach((a) => {
+    const sluggedStatus = slugify(a.status);
+    html += `
+      <div class="appointment-card" data-id="${a.id}">
         <div class="appointment-card__row">
-            <span class="appointment-card__time">${a.time_start.slice(0, 5)}</span>
-            <span class="appointment-card__name">${a.patient_name}</span>
-            <span class="appointment-card__doctor">${a.doctor || "—"}</span>
-            <div class="appointment-card__status badge-">
-                <select class="form-select select-flujo-cambio select-flujo-cambio--${slugify(a.status)}" id="select-flujo-${a.id}" data-id="${a.id}">
-                    ${statusEnum.map((status) => `<option value="${status}" ${a.status === status ? "selected" : ""}>${status}</option>`).join("")}
-                </select>
-            </div>
-            <button class="btn-ver-detalles appointment-card__toggle" data-id="${a.id}">Ver detalles</button>
+          <span class="appointment-card__time">${a.time_start.substring(0, 5)}</span>
+          <span class="appointment-card__name">${a.patient_name}</span>
+          <span class="appointment-card__doctor">${a.doctor || "Sin asignar"}</span>
+          <div>
+            <select class="form-select select-flujo-cambio select-flujo-cambio--${sluggedStatus}" data-id="${a.id}">
+              <option value="Reservado" ${a.status === "Reservado" ? "selected" : ""}>Reservado</option>
+              <option value="En sala de espera" ${a.status === "En sala de espera" ? "selected" : ""}>En sala de espera</option>
+              <option value="En atención" ${a.status === "En atención" ? "selected" : ""}>En atención</option>
+              <option value="Finalizado" ${a.status === "Finalizado" ? "selected" : ""}>Finalizado</option>
+              <option value="Ausente" ${a.status === "Ausente" ? "selected" : ""}>Ausente</option>
+              <option value="Cancelado" ${a.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
+            </select>
+          </div>
+          <button class="appointment-card__toggle">Ver</button>
         </div>
         <div class="appointment-card__detail">
-            <div class="detail-row"><span class="detail-label">Obra social</span><span>${a.social_work || "—"}</span></div>
-            <div class="detail-row"><span class="detail-label">Notas</span><span>${a.notes || "—"}</span></div>
-            <div class="appointment-history-log" id="histLog-${a.id}">
-                <span class="detail-label">Línea de Tiempo del Paciente:</span>
-                <div class="history-items">Cargando recorrido...</div>
+          <div class="detail-row"><span class="detail-label">Teléfono:</span> <span>${a.phone || "No registrado"}</span></div>
+          <div class="detail-row"><span class="detail-label">Obra Social:</span> <span>${a.social_work || "Particular"}</span></div>
+          <div class="detail-row"><span class="detail-label">Monto ($):</span> <span>${a.payment || "0"}</span></div>
+          <div class="detail-row"><span class="detail-label">Notas:</span> <span>${a.notes || "Sin observaciones"}</span></div>
+          
+          <div class="appointment-history-log" id="histLog-${a.id}">
+            <div class="history-items">
+              <p style="font-size:0.75rem; color:#888; margin:0;">Cargando historial de flujo...</p>
             </div>
-            <div class="detail-actions" style="margin-top:0.75rem;">
-                <button class="btn btn--danger btn--sm appointment-card__delete" data-id="${a.id}">Eliminar</button>
-            </div>
-        </div>
-    </div>
-  `,
-    )
-    .join("");
+          </div>
 
+          <div class="detail-actions">
+            <button class="btn btn--danger btn--sm appointment-card__delete" data-id="${a.id}">Eliminar Turno</button>
+          </div>
+        </div>
+      </div>
+    `;
+  });
+
+  html += `</div>`;
   panelBody.innerHTML = html;
+
+  setupFilterListeners();
   attachAppointmentEvents();
 }
 
+function setupFilterListeners() {
+  const searchInput = document.getElementById("appointmentSearch");
+
+  if (searchInput) {
+    searchInput.addEventListener("input", (e) => {
+      appointmentSearchQuery = e.target.value;
+      loadAppointments(appState.activeDay);
+
+      const input = document.getElementById("appointmentSearch");
+      if (input) {
+        input.focus();
+        input.setSelectionRange(input.value.length, input.value.length);
+      }
+    });
+  }
+
+  document.querySelectorAll(".btn-filter").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      appointmentFilterStatus = btn.dataset.status;
+      loadAppointments(appState.activeDay);
+    });
+  });
+}
+
 function attachAppointmentEvents() {
-  // Despliegue de tarjetas (Ver detalles)
   panelBody.querySelectorAll(".appointment-card__toggle").forEach((btn) => {
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -157,7 +171,7 @@ function attachAppointmentEvents() {
       const isOpen = card.classList.contains("is-open");
 
       panelBody
-        .querySelectorAll(".appointment-card.is-open")
+        .querySelectorAll(".appointment-card")
         .forEach((c) => c.classList.remove("is-open"));
 
       if (!isOpen) {
@@ -167,17 +181,15 @@ function attachAppointmentEvents() {
     });
   });
 
-  // Evento de cambio de select de estados
   panelBody.querySelectorAll(".select-flujo-cambio").forEach((select) => {
-    select.addEventListener("click", (e) => e.stopPropagation());
     select.addEventListener("change", async () => {
+      const id = select.dataset.id;
+      const targetStatus = select.value;
+
+      select.disabled = true;
       try {
-        select.disabled = true;
-        await updateAppointmentStatus(select.dataset.id, select.value);
-        await loadAppointments(
-          appState.activeDay,
-          appState.currentFilterStatus,
-        );
+        await updateAppointmentStatus(id, targetStatus);
+        await loadAppointments(appState.activeDay);
       } catch (error) {
         alert("No se pudo actualizar el estado.\n\n" + error.message);
       } finally {
@@ -186,22 +198,21 @@ function attachAppointmentEvents() {
     });
   });
 
-  // Eliminar turno
   panelBody.querySelectorAll(".appointment-card__delete").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
+      const card = btn.closest(".appointment-card");
+      const patientName = card.querySelector(
+        ".appointment-card__name",
+      ).textContent;
 
-      // Alerta de confirmación
-      const patientName = btn
-        .closest(".appointment-card")
-        .querySelector(".appointment-card__name").textContent;
       if (
         confirm(
           `¿Estás seguro de que deseas eliminar permanentemente el turno de ${patientName}?`,
         )
       ) {
         await removeAppointment(btn.dataset.id);
-        loadAppointments(appState.activeDay, appState.currentFilterStatus);
+        loadAppointments(appState.activeDay);
       }
     });
   });
@@ -219,10 +230,10 @@ async function loadTimelineHistory(id) {
     container.innerHTML = history
       .map((h) => {
         const time = h.changed_at.slice(11, 16);
-        return `<div class="hist-item">• <strong>${time} hs:</strong> ${h.status_from ? h.status_from : "Turno creado"} → <span>${h.status_to}</span></div>`;
+        return `<div class="hist-item shadow-text">• <strong>${time} hs:</strong> ${h.status_from ? h.status_from : "Turno creado"} → <span>${h.status_to}</span></div>`;
       })
       .join("");
   } catch (err) {
-    container.innerHTML = "Error al mapear línea de tiempo.";
+    container.innerHTML = `<p style="font-size:0.75rem; color:#dc2626; margin:0;">Error al cargar línea de tiempo.</p>`;
   }
 }

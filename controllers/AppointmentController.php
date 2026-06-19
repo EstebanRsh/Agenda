@@ -16,8 +16,11 @@ class AppointmentController
         $action = $_GET['action'] ?? '';
 
         if ($action === 'list') {
-            $date = $_GET['date'] ?? date('Y-m-d');
-            $this->json($this->model->getByDate($date));
+            $date   = $_GET['date'] ?? date('Y-m-d');
+            $search = trim($_GET['search'] ?? '');
+            $status = trim($_GET['status'] ?? 'todos');
+
+            $this->json($this->model->getByDate($date, $search, $status));
         }
 
         if ($action === 'create' && $_SERVER['REQUEST_METHOD'] === 'POST') {

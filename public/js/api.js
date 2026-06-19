@@ -6,14 +6,12 @@ async function handleJsonResponse(response) {
   const contentType = response.headers.get("content-type");
 
   if (!response.ok) {
-    // Si el servidor responde con un estado de error (400, 404, 500, etc.)
     const textError = await response.text();
     console.error("Error del Servidor (Texto Plano):", textError);
     throw new Error(`Error del servidor: HTTP ${response.status}`);
   }
 
   if (!contentType || !contentType.includes("application/json")) {
-    // Si la respuesta no es un JSON (aquí es donde rompía antes)
     const rawText = await response.text();
     console.group("❌ RESPUESTA NO-JSON DETECTADA");
     console.error("Se esperaba JSON pero se recibió otra cosa.");
@@ -27,8 +25,18 @@ async function handleJsonResponse(response) {
   return await response.json();
 }
 
-export async function fetchAppointments(date) {
-  const res = await fetch(`${BASE_URL}/?action=list&date=${date}`);
+// Ahora la API delega el filtrado y búsqueda directo a los parámetros URL de PHP
+export async function fetchAppointments(date, search = "", status = "todos") {
+  const url = `${BASE_URL}/?action=list&date=${date}&search=${encodeURIComponent(search)}&status=${status}`;
+  const res = await fetch(url);
+  return await handleJsonResponse(res);
+}
+
+export async function createAppointment(formData) {
+  const res = await fetch(`${BASE_URL}/?action=create`, {
+    method: "POST",
+    body: formData,
+  });
   return await handleJsonResponse(res);
 }
 
@@ -60,12 +68,4 @@ export async function removeAppointment(id) {
   });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res;
-}
-
-export async function createAppointment(fd) {
-  const res = await fetch(`${BASE_URL}/?action=create`, {
-    method: "POST",
-    body: fd,
-  });
-  return await handleJsonResponse(res);
 }

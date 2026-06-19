@@ -70,11 +70,12 @@ async function submitModalData() {
     const data = await createAppointment(fd);
     if (data.success) {
       closeModal();
-      loadAppointments(appState.activeDay, appState.currentFilterStatus);
+      // Recarga los turnos del día activo llamando a la nueva lógica del servidor
+      loadAppointments(appState.activeDay);
     } else {
-      alert("Error al guardar.");
+      alert("Error al intentar guardar el turno en el servidor.");
     }
-  } catch (err) {
-    console.error(err);
+  } catch (error) {
+    alert("Ocurrió un problema de red o de servidor:\n" + error.message);
   }
 }

@@ -338,6 +338,14 @@ body {
   text-align: center;
 }
 
+.panel-filters::-webkit-scrollbar {
+  display: none;
+}
+.panel-filters {
+  -overflow-style: none; /* IE y Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
 /* ==========================================================================
    TARJETAS DE TURNOS Y DESPLEGABLES
    ========================================================================== */
@@ -815,6 +823,32 @@ body {
 
 .form-select:focus {
   border-color: var(--color-text);
+}
+
+/* Estilos minimalistas para los filtros rápidos de turnos */
+.btn-filter {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-family: var(--font);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.1s ease;
+}
+
+.btn-filter:hover {
+  border-color: var(--color-text);
+  color: var(--color-text);
+}
+
+.btn-filter.active {
+  background: var(--color-text);
+  border-color: var(--color-text);
+  color: var(--color-surface);
 }
 
 /* ==========================================================================

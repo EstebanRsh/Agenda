@@ -10,10 +10,39 @@ class AppointmentModel
         $this->conn = getConnection();
     }
 
-    public function getByDate(string $date): array
+    public function getByDate(string $date, string $search = '', string $status = 'todos'): array
     {
-        $stmt = $this->conn->prepare("SELECT * FROM appointments WHERE date = ? ORDER BY time_start ASC");
-        $stmt->bind_param('s', $date);
+        $query = "SELECT * FROM appointments WHERE date = ?";
+        $types = 's';
+        $params = [$date];
+
+        if (!empty($search)) {
+            $query .= " AND (patient_name LIKE ? OR doctor LIKE ?)";
+            $types .= 'ss';
+            $searchParam = "%$search%";
+            $params[] = $searchParam;
+            $params[] = $searchParam;
+        }
+
+        // Sincronización exacta de slugs JS a texto de Base de Datos
+        if ($status !== 'todos') {
+            $mappedStatus = $status;
+            if ($status === 'reservado')           $mappedStatus = 'Reservado';
+            if ($status === 'en-sala-de-espera')   $mappedStatus = 'En sala de espera';
+            if ($status === 'en-atencion')         $mappedStatus = 'En atención';
+            if ($status === 'finalizado')          $mappedStatus = 'Finalizado';
+            if ($status === 'ausente')             $mappedStatus = 'Ausente';
+            if ($status === 'cancelado')           $mappedStatus = 'Cancelado';
+
+            $query .= " AND status = ?";
+            $types .= 's';
+            $params[] = $mappedStatus;
+        }
+
+        $query .= " ORDER BY time_start ASC";
+
+        $stmt = $this->conn->prepare($query);
+        $stmt->bind_param($types, ...$params);
         $stmt->execute();
         return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
     }
