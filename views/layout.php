@@ -16,7 +16,7 @@ $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
     <script>
         const BASE_URL = '<?= $base ?>';
     </script>
-    <script src="<?= $base ?>/public/js/main.js"></script>
+    <script src="<?= $base ?>/public/js/main.js" type="module"></script>
 </body>
 
 </html>
