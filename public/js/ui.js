@@ -79,15 +79,7 @@ function renderDashboardAndAppointments(allAppointments, filterStatus) {
     ? allAppointments.filter((a) => slugify(a.status) === filterStatus)
     : allAppointments;
 
-  let html = `
-    <div class="panel-medico">
-        <h4>Control de Consultorio</h4>
-        <div class="medico-row"><strong>Actual:</strong> <span>${currentPatient}</span></div>
-        <div class="medico-row"><strong>Siguiente:</strong> <span>${nextPatient}</span></div>
-        <div class="medico-row"><strong>En Espera:</strong> <span class="badge-espera">${waitingList.length} pacientes</span></div>
-    </div>
-    <h4 style="margin: 1rem 0 0.5rem 0; font-size:0.85rem; text-transform:uppercase; color:#666;">Listado de Turnos</h4>
-  `;
+  let html = ``;
 
   if (!displayedAppointments.length) {
     html += '<p class="panel-empty">Sin pacientes para este estado.</p>';
@@ -104,6 +96,23 @@ function renderDashboardAndAppointments(allAppointments, filterStatus) {
     "Ausente",
   ];
 
+  // Ordenar turnos: Primero por hora, luego por prioridad de estado clínico
+  const sortedAppointments = [...displayedAppointments].sort((a, b) => {
+    if (a.time_start !== b.time_start) {
+      return a.time_start.localeCompare(b.time_start);
+    }
+    // Si coinciden en la hora (sobreturno), mandamos los cancelados/ausentes al final
+    const priority = {
+      "En atención": 1,
+      "En sala de espera": 2,
+      Reservado: 3,
+      Finalizado: 4,
+      Ausente: 5,
+      Cancelado: 6,
+    };
+    return (priority[a.status] || 99) - (priority[b.status] || 99);
+  });
+
   html += displayedAppointments
     .map(
       (a) => `
@@ -113,7 +122,7 @@ function renderDashboardAndAppointments(allAppointments, filterStatus) {
             <span class="appointment-card__name">${a.patient_name}</span>
             <span class="appointment-card__doctor">${a.doctor || "—"}</span>
             <div class="appointment-card__status badge-">
-                <select class="form-select select-flujo-cambio" id="select-flujo-${a.id}" data-id="${a.id}">
+                <select class="form-select select-flujo-cambio select-flujo-cambio--${slugify(a.status)}" id="select-flujo-${a.id}" data-id="${a.id}">
                     ${statusEnum.map((status) => `<option value="${status}" ${a.status === status ? "selected" : ""}>${status}</option>`).join("")}
                 </select>
             </div>
@@ -181,8 +190,19 @@ function attachAppointmentEvents() {
   panelBody.querySelectorAll(".appointment-card__delete").forEach((btn) => {
     btn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      await removeAppointment(btn.dataset.id);
-      loadAppointments(appState.activeDay, appState.currentFilterStatus);
+
+      // Alerta de confirmación
+      const patientName = btn
+        .closest(".appointment-card")
+        .querySelector(".appointment-card__name").textContent;
+      if (
+        confirm(
+          `¿Estás seguro de que deseas eliminar permanentemente el turno de ${patientName}?`,
+        )
+      ) {
+        await removeAppointment(btn.dataset.id);
+        loadAppointments(appState.activeDay, appState.currentFilterStatus);
+      }
     });
   });
 }
