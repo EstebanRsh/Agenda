@@ -8,8 +8,10 @@ $base = rtrim(str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME'])), '/');
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Agenda</title>
-    <link rel="stylesheet" href="<?= $base ?>/public/css/style.css">
-    <link rel="stylesheet" href="<?= $base ?>/public/css/navbar-effects.css">
+    <link rel="stylesheet" href="<?= $base ?>/public/css/base.css">
+    <link rel="stylesheet" href="<?= $base ?>/public/css/sidebar.css">
+    <link rel="stylesheet" href="<?= $base ?>/public/css/components.css">
+    <link rel="stylesheet" href="<?= $base ?>/public/css/app-core.css">
 </head>
 
 <body>

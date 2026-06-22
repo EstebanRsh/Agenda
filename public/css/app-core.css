@@ -1,0 +1,382 @@
+/* ==========================================================================
+   APP CORE: MODO ENFOQUE & GRID STACKING
+   ========================================================================== */
+
+.app-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  justify-items: center;
+  align-items: start;
+  width: 100%;
+  gap: 0;
+  margin-top: 1rem;
+}
+
+/* Comparten mismas coordenadas y elevación (Floating UI) */
+.calendar-wrapper,
+.day-panel {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  max-width: 760px;
+  background-color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+  box-shadow:
+    0 12px 36px rgba(0, 119, 182, 0.04),
+    0 1px 3px rgba(0, 0, 0, 0.02);
+  position: relative;
+  z-index: 10;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease,
+    transform 0.3s ease;
+}
+
+/* Estado por defecto: Calendario visible, Panel oculto */
+.day-panel {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.98);
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.calendar-wrapper {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  pointer-events: all;
+  overflow: hidden;
+}
+
+/* Estado activo (Modo Enfoque): Panel visible, Calendario oculto */
+.app-layout.panel-open .calendar-wrapper {
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.98);
+  pointer-events: none;
+}
+
+.app-layout.panel-open .day-panel {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+  pointer-events: all;
+}
+
+/* ==========================================================================
+   COMPONENTES INTERNOS DEL CALENDARIO
+   ========================================================================== */
+
+.calendar__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2px solid var(--color-text);
+}
+
+.calendar__title {
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+.calendar__month {
+  margin-right: 0.4rem;
+}
+.calendar__year {
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+.calendar__nav {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  color: var(--color-text);
+  text-decoration: none;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.nav-btn:hover {
+  background: var(--color-hover);
+  border-color: #ccc;
+}
+
+.calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+.calendar__day-name {
+  padding: 0.6rem 0;
+  text-align: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.calendar__cell {
+  min-height: var(--cell-min-h);
+  padding: 0.5rem 0.6rem;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: background 0.12s;
+}
+.calendar__cell:nth-child(7n) {
+  border-right: none;
+}
+.calendar__cell:hover:not(.calendar__cell--ghost):not(.calendar__cell--today) {
+  background: var(--color-hover);
+}
+.calendar__cell--ghost {
+  background: #fafafa;
+}
+.calendar__cell--ghost .cell__number {
+  color: var(--color-text-muted);
+}
+.calendar__cell--today {
+  background: var(--color-today-bg);
+}
+.calendar__cell--today .cell__number {
+  color: var(--color-today-text);
+}
+.calendar__cell--selected {
+  outline: 2px solid var(--color-text);
+  outline-offset: -2px;
+}
+
+.cell__number {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.cell__events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: auto;
+  padding-top: 4px;
+  width: 100%;
+}
+
+/* ==========================================================================
+   COMPONENTES INTERNOS DEL PANEL DIARIO
+   ========================================================================== */
+
+.day-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 2px solid var(--color-text);
+}
+.day-panel__date {
+  font-size: 1rem;
+  font-weight: 600;
+}
+.day-panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.day-panel__close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: none;
+  cursor: pointer;
+  color: var(--color-text);
+}
+.day-panel__close:hover {
+  background: var(--color-hover);
+}
+
+.day-panel__body {
+  padding: 1rem 1.25rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
+}
+.panel-empty,
+.panel-loading {
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.appointment-card {
+  border-bottom: 1px solid var(--color-border);
+}
+.appointment-card:last-child {
+  border-bottom: none;
+}
+.appointment-card__row {
+  display: grid;
+  grid-template-columns: 60px 1.5fr 1fr 140px auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+}
+.appointment-card__row:hover {
+  background: var(--color-hover);
+}
+.appointment-card__time {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.appointment-card__name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.appointment-card__doctor {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.appointment-card__toggle {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+.appointment-card__toggle:hover {
+  background: var(--color-hover);
+  border-color: var(--color-text);
+}
+.appointment-card.is-open .appointment-card__toggle {
+  background: var(--color-text);
+  color: var(--color-surface);
+}
+
+.appointment-card__detail {
+  display: none;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.25rem 0.85rem 0.25rem;
+  border-top: 1px solid var(--color-border);
+}
+.appointment-card.is-open .appointment-card__detail {
+  display: flex;
+}
+.detail-row {
+  display: flex;
+  gap: 0.75rem;
+  font-size: 0.82rem;
+}
+.detail-label {
+  color: var(--color-text-muted);
+  font-weight: 600;
+  min-width: 90px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+.detail-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Timeline UI */
+.appointment-history-log {
+  margin-top: 0.6rem;
+  padding-top: 0.5rem;
+  border-top: 1px dashed var(--color-border);
+}
+.history-items {
+  font-size: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.hist-item span {
+  font-weight: 600;
+  color: var(--color-atencion-text);
+}
+
+/* Selectores de flujo dinámicos */
+.select-flujo-cambio {
+  width: 100%;
+  padding: 0.35rem;
+  font-size: 0.85rem;
+  font-family: var(--font);
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  outline: none;
+}
+.select-flujo-cambio--reservado {
+  border-left-color: var(--color-reservado-text);
+}
+.select-flujo-cambio--en-sala-de-espera {
+  border-left-color: var(--color-espera-text);
+  background-color: var(--color-espera-bg);
+  color: var(--color-espera-text);
+}
+.select-flujo-cambio--en-atencion {
+  border-left-color: var(--color-atencion-text);
+  background-color: var(--color-atencion-bg);
+  color: var(--color-atencion-text);
+  font-weight: 600;
+}
+.select-flujo-cambio--finalizado {
+  border-left-color: var(--color-finalizado-text);
+  background-color: var(--color-finalizado-bg);
+  color: var(--color-finalizado-text);
+}
+.select-flujo-cambio--cancelado {
+  border-left-color: var(--color-cancelado-text);
+  background-color: var(--color-cancelado-bg);
+  color: var(--color-cancelado-text);
+}
+.select-flujo-cambio--ausente {
+  border-left-color: var(--color-ausente-text);
+  background-color: var(--color-ausente-bg);
+  color: var(--color-ausente-text);
+}
+
+@media (max-width: 560px) {
+  :root {
+    --cell-min-h: 56px;
+  }
+  .calendar__cell {
+    justify-content: flex-start;
+    gap: 4px;
+  }
+  .calendar__title {
+    font-size: 1.1rem;
+  }
+  .calendar__day-name {
+    font-size: 0.6rem;
+    padding: 0.4rem 0;
+  }
+  .cell__number {
+    font-size: 0.75rem;
+  }
+}
