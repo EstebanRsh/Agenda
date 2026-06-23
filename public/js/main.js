@@ -1,4 +1,3 @@
-// Punto de Entrada Central de la Aplicación
 import { openPanelForDate, closePanel } from "./ui.js";
 import { initModal } from "./modal.js";
 import { fetchAppointments } from "./api.js";
@@ -59,6 +58,34 @@ document.querySelectorAll(".cell__status-badge").forEach((badge) => {
 });
 
 closeBtn.addEventListener("click", closePanel);
+
+// ==========================================================================
+// INTERACCIÓN SIDEBAR RESPONSIVE (MÓVIL)
+// ==========================================================================
+const burgerBtn = document.getElementById("mobileBurger");
+const sidebar = document.querySelector(".premium-sidebar");
+const sidebarOverlay = document.getElementById("sidebarOverlay");
+
+if (burgerBtn && sidebar && sidebarOverlay) {
+  const toggleMobileSidebar = () => {
+    sidebar.classList.toggle("mobile-open");
+    sidebarOverlay.classList.toggle("is-visible");
+    burgerBtn.classList.toggle("is-active");
+  };
+
+  // Eventos para abrir/cerrar
+  burgerBtn.addEventListener("click", toggleMobileSidebar);
+  sidebarOverlay.addEventListener("click", toggleMobileSidebar);
+
+  // UX: Si se cambia de sección en el menú, lo colapsamos automáticamente
+  sidebar.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      sidebar.classList.remove("mobile-open");
+      sidebarOverlay.classList.remove("is-visible");
+      burgerBtn.classList.remove("is-active");
+    });
+  });
+}
 
 // Inicializar el módulo del modal
 initModal();
