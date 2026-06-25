@@ -361,22 +361,62 @@
   color: var(--color-ausente-text);
 }
 
-@media (max-width: 560px) {
+/* ==========================================================================
+   RESPONSIVIDAD DEL CORE (VISTA COMPACTA SIN SCROLL)
+   ========================================================================== */
+
+@media (max-width: 768px) {
   :root {
-    --cell-min-h: 56px;
+    /* Reducimos drásticamente la altura mínima para que todo el mes entre en pantalla */
+    --cell-min-h: 45px;
   }
-  .calendar__cell {
-    justify-content: flex-start;
-    gap: 4px;
+
+  .calendar__header {
+    padding: 0.75rem 1rem;
   }
+
   .calendar__title {
     font-size: 1.1rem;
   }
+
+  .calendar__nav {
+    transform: scale(0.9); /* Achicamos un poco los botones de navegación */
+  }
+
   .calendar__day-name {
     font-size: 0.6rem;
-    padding: 0.4rem 0;
+    padding: 0.3rem 0;
   }
+
+  .calendar__cell {
+    /* Centramos el número y quitamos padding excesivo */
+    padding: 0.25rem;
+    justify-content: center;
+    align-items: center;
+    gap: 0;
+  }
+
   .cell__number {
-    font-size: 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* LA MAGIA: Ocultamos los indicadores de estado en móvil para evitar que la celda colapse y se alargue */
+  .cell__events {
+    display: none !important;
+  }
+
+  /* Ajuste para que el panel lateral (cuando se abre) se vea perfecto en móvil */
+  .app-layout.panel-open .day-panel {
+    max-width: 100% !important;
+    border-radius: 8px;
+    border: none !important;
+  }
+
+  .day-panel__header {
+    padding: 1rem;
+  }
+
+  .day-panel__body {
+    padding: 1rem;
   }
 }
