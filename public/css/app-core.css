@@ -223,66 +223,71 @@
 
 .appointment-card {
   border-bottom: 1px solid var(--color-border);
+  background-color: var(--color-surface);
 }
 .appointment-card:last-child {
   border-bottom: none;
 }
+
+/* Rediseño Estructural de Filas (Layout Premium de Escritorio) */
 .appointment-card__row {
-  display: grid;
-  grid-template-columns: 60px 1.5fr 1fr 140px auto;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 0.5rem;
-  padding: 0.5rem 0.75rem;
+  padding: 0.85rem 1.25rem;
+  cursor: pointer;
+  transition: background 0.15s ease;
 }
 .appointment-card__row:hover {
   background: var(--color-hover);
 }
+
+.appointment-card__col-left {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+.appointment-card__col-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
 .appointment-card__time {
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
+  color: var(--color-text);
+  min-width: 45px;
 }
 .appointment-card__name {
-  font-size: 0.875rem;
+  font-size: 0.95rem;
   font-weight: 600;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  color: var(--color-text);
 }
 .appointment-card__doctor {
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   color: var(--color-text-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
-.appointment-card__toggle {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.35rem 0.65rem;
-  border-radius: var(--radius);
-  cursor: pointer;
-}
-.appointment-card__toggle:hover {
-  background: var(--color-hover);
-  border-color: var(--color-text);
-}
-.appointment-card.is-open .appointment-card__toggle {
-  background: var(--color-text);
-  color: var(--color-surface);
-}
-
+/* Detalles del turno en Escritorio */
 .appointment-card__detail {
   display: none;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 0.5rem 0.25rem 0.85rem 0.25rem;
+  gap: 1rem;
+  padding: 1.25rem;
   border-top: 1px solid var(--color-border);
+  background: #fafafa;
 }
 .appointment-card.is-open .appointment-card__detail {
   display: flex;
+}
+.detail-header-mobile {
+  display: none; /* Exclusivo de vista móvil */
+}
+.detail-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 .detail-row {
   display: flex;
@@ -302,7 +307,10 @@
   justify-content: flex-end;
 }
 
-/* Timeline UI */
+/* ==========================================================================
+   TIMELINE UI
+   ========================================================================== */
+
 .appointment-history-log {
   margin-top: 0.6rem;
   padding-top: 0.5rem;
@@ -319,7 +327,10 @@
   color: var(--color-atencion-text);
 }
 
-/* Selectores de flujo dinámicos */
+/* ==========================================================================
+   SELECTORES DE FLUJO DINÁMICOS
+   ========================================================================== */
+
 .select-flujo-cambio {
   width: 100%;
   padding: 0.35rem;
@@ -362,12 +373,11 @@
 }
 
 /* ==========================================================================
-   RESPONSIVIDAD DEL CORE (VISTA COMPACTA SIN SCROLL)
+   RESPONSIVIDAD DEL CORE (VISTA COMPACTA SIN SCROLL + MODAL FULLSCREEN)
    ========================================================================== */
 
 @media (max-width: 768px) {
   :root {
-    /* Reducimos drásticamente la altura mínima para que todo el mes entre en pantalla */
     --cell-min-h: 45px;
   }
 
@@ -380,7 +390,7 @@
   }
 
   .calendar__nav {
-    transform: scale(0.9); /* Achicamos un poco los botones de navegación */
+    transform: scale(0.9);
   }
 
   .calendar__day-name {
@@ -389,7 +399,6 @@
   }
 
   .calendar__cell {
-    /* Centramos el número y quitamos padding excesivo */
     padding: 0.25rem;
     justify-content: center;
     align-items: center;
@@ -400,12 +409,10 @@
     font-size: 0.85rem;
   }
 
-  /* LA MAGIA: Ocultamos los indicadores de estado en móvil para evitar que la celda colapse y se alargue */
   .cell__events {
     display: none !important;
   }
 
-  /* Ajuste para que el panel lateral (cuando se abre) se vea perfecto en móvil */
   .app-layout.panel-open .day-panel {
     max-width: 100% !important;
     border-radius: 8px;
@@ -418,5 +425,114 @@
 
   .day-panel__body {
     padding: 1rem;
+  }
+
+  /* Tarjetas Operativas a Doble Línea */
+  .appointment-card__row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+  }
+  .appointment-card__col-left {
+    width: 100%;
+    gap: 0.75rem;
+  }
+  .appointment-card__col-right {
+    width: 100%;
+    justify-content: space-between;
+    gap: 0;
+    border-top: 1px dashed rgba(0, 0, 0, 0.06);
+    padding-top: 0.4rem;
+  }
+  .appointment-card__name {
+    font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+  }
+  .appointment-card__doctor {
+    font-size: 0.8rem;
+  }
+
+  /* MODAL MODIFICADO: Corrección a Pantalla Completa Limpia (Elimina efecto Bottom Sheet de imagen_3.png) */
+  .appointment-card.is-open .appointment-card__detail {
+    display: flex;
+    position: fixed;
+    inset: 0; /* Cubre el 100% de la pantalla (top, bottom, left, right: 0) */
+    width: 100vw;
+    height: 100vh;
+    max-height: 100vh;
+    background: #ffffff; /* Fondo totalmente sólido */
+    border-radius: 0; /* Remueve bordes curvos de tarjeta parcial */
+    box-shadow: none;
+    z-index: 3000; /* Por encima de cualquier elemento */
+    padding: 1.5rem;
+    border-top: none;
+    overflow-y: auto; /* Permite scroll si el historial es largo */
+    box-sizing: border-box;
+    animation: modalFadeIn 0.2s ease-out; /* Transición suave de entrada */
+  }
+
+  /* Desactivamos el pseudo-backdrop ya que el contenedor ahora cubre todo el espacio */
+  .appointment-card.is-open::before {
+    display: none !important;
+  }
+
+  /* Cabecera del Modal Fullscreen */
+  .detail-header-mobile {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.85rem;
+    margin-bottom: 1.25rem;
+  }
+  .detail-header-mobile h3 {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--color-text);
+  }
+  .detail-close-mobile {
+    font-size: 1.75rem;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 0.2rem 0.5rem;
+    line-height: 1;
+  }
+
+  /* UI de gestión interna adaptada a pantalla completa */
+  .appointment-card__detail .select-flujo-cambio {
+    padding: 0.7rem;
+    font-size: 0.95rem;
+    margin-top: 0.4rem;
+  }
+  .appointment-card__detail .detail-row {
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.02);
+  }
+  .appointment-card__detail .detail-actions {
+    margin-top: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  .appointment-card__detail .detail-actions .btn {
+    width: 100%;
+    padding: 0.85rem;
+    font-size: 0.95rem;
+  }
+}
+
+/* Animación de entrada nativa para Modal Completo */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
