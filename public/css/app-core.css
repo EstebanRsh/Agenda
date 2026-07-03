@@ -269,105 +269,43 @@
   color: var(--color-text-muted);
 }
 
-/* Detalles del turno en Escritorio */
-.appointment-card__detail {
-  display: none;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem;
-  border-top: 1px solid var(--color-border);
-  background: #fafafa;
-}
-.appointment-card.is-open .appointment-card__detail {
-  display: flex;
-}
-.detail-header-mobile {
-  display: none; /* Exclusivo de vista móvil */
-}
-.detail-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-.detail-row {
-  display: flex;
-  gap: 0.75rem;
-  font-size: 0.82rem;
-}
-.detail-label {
-  color: var(--color-text-muted);
-  font-weight: 600;
-  min-width: 90px;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-}
-.detail-actions {
-  margin-top: 0.5rem;
-  display: flex;
-  justify-content: flex-end;
-}
-
-/* ==========================================================================
-   TIMELINE UI
-   ========================================================================== */
-
-.appointment-history-log {
-  margin-top: 0.6rem;
-  padding-top: 0.5rem;
-  border-top: 1px dashed var(--color-border);
-}
-.history-items {
-  font-size: 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-.hist-item span {
-  font-weight: 600;
-  color: var(--color-atencion-text);
-}
-
 /* ==========================================================================
    SELECTORES DE FLUJO DINÁMICOS
    ========================================================================== */
 
 .select-flujo-cambio {
   width: 100%;
-  padding: 0.35rem;
-  font-size: 0.85rem;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
   font-family: var(--font);
   border: 1px solid var(--color-border);
-  border-left: 4px solid var(--color-border);
   border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text);
   cursor: pointer;
   outline: none;
 }
 .select-flujo-cambio--reservado {
-  border-left-color: var(--color-reservado-text);
+  background-color: var(--color-reservado-bg);
+  color: var(--color-reservado-text);
 }
 .select-flujo-cambio--en-sala-de-espera {
-  border-left-color: var(--color-espera-text);
   background-color: var(--color-espera-bg);
   color: var(--color-espera-text);
 }
 .select-flujo-cambio--en-atencion {
-  border-left-color: var(--color-atencion-text);
   background-color: var(--color-atencion-bg);
   color: var(--color-atencion-text);
-  font-weight: 600;
 }
 .select-flujo-cambio--finalizado {
-  border-left-color: var(--color-finalizado-text);
   background-color: var(--color-finalizado-bg);
   color: var(--color-finalizado-text);
 }
 .select-flujo-cambio--cancelado {
-  border-left-color: var(--color-cancelado-text);
   background-color: var(--color-cancelado-bg);
   color: var(--color-cancelado-text);
 }
 .select-flujo-cambio--ausente {
-  border-left-color: var(--color-ausente-text);
   background-color: var(--color-ausente-bg);
   color: var(--color-ausente-text);
 }
@@ -410,13 +348,13 @@
   }
 
   .cell__events {
-    display: none !important;
+    display: none;
   }
 
   .app-layout.panel-open .day-panel {
-    max-width: 100% !important;
+    max-width: 100%;
     border-radius: 8px;
-    border: none !important;
+    border: none;
   }
 
   .day-panel__header {
@@ -455,75 +393,18 @@
   .appointment-card__doctor {
     font-size: 0.8rem;
   }
-
-  /* MODAL MODIFICADO: Corrección a Pantalla Completa Limpia (Elimina efecto Bottom Sheet de imagen_3.png) */
-  .appointment-card.is-open .appointment-card__detail {
-    display: flex;
-    position: fixed;
-    inset: 0; /* Cubre el 100% de la pantalla (top, bottom, left, right: 0) */
-    width: 100vw;
-    height: 100vh;
-    max-height: 100vh;
-    background: #ffffff; /* Fondo totalmente sólido */
-    border-radius: 0; /* Remueve bordes curvos de tarjeta parcial */
-    box-shadow: none;
-    z-index: 3000; /* Por encima de cualquier elemento */
-    padding: 1.5rem;
-    border-top: none;
-    overflow-y: auto; /* Permite scroll si el historial es largo */
-    box-sizing: border-box;
-    animation: modalFadeIn 0.2s ease-out; /* Transición suave de entrada */
-  }
-
-  /* Desactivamos el pseudo-backdrop ya que el contenedor ahora cubre todo el espacio */
-  .appointment-card.is-open::before {
-    display: none !important;
-  }
-
-  /* Cabecera del Modal Fullscreen */
-  .detail-header-mobile {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 0.85rem;
-    margin-bottom: 1.25rem;
-  }
-  .detail-header-mobile h3 {
-    font-size: 1.15rem;
-    font-weight: 700;
-    color: var(--color-text);
-  }
-  .detail-close-mobile {
-    font-size: 1.75rem;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    padding: 0.2rem 0.5rem;
-    line-height: 1;
-  }
-
-  /* UI de gestión interna adaptada a pantalla completa */
-  .appointment-card__detail .select-flujo-cambio {
-    padding: 0.7rem;
-    font-size: 0.95rem;
-    margin-top: 0.4rem;
-  }
-  .appointment-card__detail .detail-row {
-    flex-direction: column;
-    gap: 0.2rem;
-    padding: 0.5rem 0;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.02);
-  }
-  .appointment-card__detail .detail-actions {
-    margin-top: 1.5rem;
-    margin-bottom: 1rem;
-  }
-  .appointment-card__detail .detail-actions .btn {
-    width: 100%;
-    padding: 0.85rem;
-    font-size: 0.95rem;
-  }
 }
+
+/* Animación de entrada nativa para Modal Completo */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 
 /* Animación de entrada nativa para Modal Completo */
 @keyframes modalFadeIn {

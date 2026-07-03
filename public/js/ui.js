@@ -12,6 +12,8 @@ const panel = document.getElementById("dayPanel");
 const panelDate = document.getElementById("panelDate");
 const panelBody = document.getElementById("panelBody");
 const layout = document.querySelector(".app-layout");
+const appointmentMap = new Map();
+let activeDetailModal = null;
 
 // Variables internas de control para persistir los filtros en la sesión de la vista
 let appointmentSearchQuery = "";
@@ -67,11 +69,9 @@ export async function loadAppointments(date) {
 function renderAppointmentsList(appointments) {
   // 1. Inyectamos los filtros con el contenedor deslizable horizontal nativo
   let html = `
-    <div class="panel-controls" style="margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
-      <input type="text" id="appointmentSearch" placeholder="Buscar paciente o profesional..." value="${appointmentSearchQuery}" 
-        style="width: 100%; padding: 0.45rem 0.75rem; font-size: 0.85rem; border: 1px solid var(--color-border); border-radius: var(--radius); font-family: var(--font); outline: none;"
-      />
-      <div class="panel-filters" style="display: flex; gap: 0.35rem; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; -ms-overflow-style: none;">
+    <div class="panel-controls">
+      <input class="panel-search" type="text" id="appointmentSearch" placeholder="Buscar paciente o profesional..." value="${appointmentSearchQuery}" autocomplete="off" />
+      <div class="panel-filters">
         <button class="btn-filter ${appointmentFilterStatus === "todos" ? "active" : ""}" data-status="todos">Todos</button>
         <button class="btn-filter ${appointmentFilterStatus === "reservado" ? "active" : ""}" data-status="reservado">Reservados</button>
         <button class="btn-filter ${appointmentFilterStatus === "en-sala-de-espera" ? "active" : ""}" data-status="en-sala-de-espera">En Espera</button>
@@ -92,8 +92,11 @@ function renderAppointmentsList(appointments) {
   }
 
   // 2. Renderizado de las nuevas tarjetas optimizadas para lectura rápida
+  appointmentMap.clear();
+
   appointments.forEach((a) => {
     const sluggedStatus = slugify(a.status);
+    appointmentMap.set(String(a.id), a);
     html += `
       <div class="appointment-card" data-id="${a.id}">
         <div class="appointment-card__row">
@@ -106,42 +109,6 @@ function renderAppointmentsList(appointments) {
             <span class="status-badge status-badge--${sluggedStatus}">${a.status}</span>
           </div>
         </div>
-        
-        <div class="appointment-card__detail">
-          <!-- Cabecera exclusiva para el Modal/Bottom Sheet en móvil -->
-          <div class="detail-header-mobile">
-            <h3>Gestión del Turno</h3>
-            <span class="detail-close-mobile" aria-label="Cerrar modal">&times;</span>
-          </div>
-          
-          <div class="detail-grid">
-            <div class="detail-row">
-              <span class="detail-label">Cambiar Estado Clínico:</span>
-              <select class="form-select select-flujo-cambio select-flujo-cambio--${sluggedStatus}" data-id="${a.id}">
-                <option value="Reservado" ${a.status === "Reservado" ? "selected" : ""}>Reservado</option>
-                <option value="En sala de espera" ${a.status === "En sala de espera" ? "selected" : ""}>En sala de espera</option>
-                <option value="En atención" ${a.status === "En atención" ? "selected" : ""}>En atención</option>
-                <option value="Finalizado" ${a.status === "Finalizado" ? "selected" : ""}>Finalizado</option>
-                <option value="Ausente" ${a.status === "Ausente" ? "selected" : ""}>Ausente</option>
-                <option value="Cancelado" ${a.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
-              </select>
-            </div>
-            <div class="detail-row"><span class="detail-label">Teléfono:</span> <span>${a.phone || "No registrado"}</span></div>
-            <div class="detail-row"><span class="detail-label">Obra Social:</span> <span>${a.social_work || "Particular"}</span></div>
-            <div class="detail-row"><span class="detail-label">Monto ($):</span> <span>${a.payment || "0"}</span></div>
-            <div class="detail-row"><span class="detail-label">Notas:</span> <span>${a.notes || "Sin observaciones"}</span></div>
-          </div>
-          
-          <div class="appointment-history-log" id="histLog-${a.id}">
-            <div class="history-items">
-              <p style="font-size:0.75rem; color:#888; margin:0;">Cargando historial de flujo...</p>
-            </div>
-          </div>
-
-          <div class="detail-actions">
-            <button class="btn btn--danger btn--sm appointment-card__delete" data-id="${a.id}">Eliminar Turno</button>
-          </div>
-        </div>
       </div>
     `;
   });
@@ -151,6 +118,147 @@ function renderAppointmentsList(appointments) {
 
   setupFilterListeners();
   attachAppointmentEvents();
+}
+
+function openAppointmentDetailModal(appointmentId) {
+  const appointment = appointmentMap.get(String(appointmentId));
+  if (!appointment) return;
+  closeAppointmentDetailModal();
+
+  const container = document.createElement("div");
+  container.className = "appointment-detail-modal-container";
+  container.innerHTML = `
+    <div class="appointment-detail-backdrop"></div>
+    <div class="appointment-detail-dialog" role="dialog" aria-modal="true" aria-label="Detalle del turno">
+      <div class="appointment-detail-header">
+        <div class="appointment-detail-title">
+          <span>${appointment.time_start.substring(0, 5)}</span>
+          <strong>${appointment.patient_name}</strong>
+        </div>
+        <button type="button" class="appointment-detail-close" aria-label="Cerrar detalle">&times;</button>
+      </div>
+      <div class="appointment-detail-body">
+        <section class="detail-grid">
+          <div class="detail-card">
+            <span class="detail-label">Fecha</span>
+            <span class="detail-value">${formatDate(appState.activeDay)}</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Profesional</span>
+            <span class="detail-value">${appointment.doctor || "Sin asignar"}</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Teléfono</span>
+            <span class="detail-value">${appointment.phone || "No registrado"}</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Obra Social</span>
+            <span class="detail-value">${appointment.social_work || "Particular"}</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Monto</span>
+            <span class="detail-value">$${appointment.payment || "0"}</span>
+          </div>
+          <div class="detail-card">
+            <span class="detail-label">Estado</span>
+            <select id="modalStatusSelect" class="form-select select-flujo-cambio select-flujo-cambio--${slugify(appointment.status)}" data-id="${appointment.id}">
+              <option value="Reservado" ${appointment.status === "Reservado" ? "selected" : ""}>Reservado</option>
+              <option value="En sala de espera" ${appointment.status === "En sala de espera" ? "selected" : ""}>En sala de espera</option>
+              <option value="En atención" ${appointment.status === "En atención" ? "selected" : ""}>En atención</option>
+              <option value="Finalizado" ${appointment.status === "Finalizado" ? "selected" : ""}>Finalizado</option>
+              <option value="Ausente" ${appointment.status === "Ausente" ? "selected" : ""}>Ausente</option>
+              <option value="Cancelado" ${appointment.status === "Cancelado" ? "selected" : ""}>Cancelado</option>
+            </select>
+          </div>
+          <div class="detail-card detail-card-full">
+            <span class="detail-label">Notas</span>
+            <span class="detail-value">${appointment.notes || "Sin observaciones"}</span>
+          </div>
+        </section>
+
+        <section class="appointment-history-log" id="histLog-${appointment.id}">
+          <div class="history-title">Historial de estado</div>
+          <div class="history-items">
+            <p class="history-placeholder">Cargando historial de flujo...</p>
+          </div>
+        </section>
+      </div>
+      <div class="appointment-detail-footer">
+        <button type="button" class="btn btn--ghost appointment-detail-close-btn">Cerrar</button>
+        <button type="button" class="btn btn--danger appointment-detail-delete" data-id="${appointment.id}">Eliminar Turno</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(container);
+  document.body.classList.add("has-detail-modal");
+  activeDetailModal = container;
+  attachDetailModalEvents(container, appointment.id);
+  loadTimelineHistory(appointment.id);
+}
+
+function closeAppointmentDetailModal() {
+  if (!activeDetailModal) return;
+  activeDetailModal.remove();
+  activeDetailModal = null;
+  document.body.classList.remove("has-detail-modal");
+}
+
+function attachDetailModalEvents(container, appointmentId) {
+  const backdrop = container.querySelector(".appointment-detail-backdrop");
+  const closeButtons = container.querySelectorAll(
+    ".appointment-detail-close, .appointment-detail-close-btn",
+  );
+  const deleteButton = container.querySelector(".appointment-detail-delete");
+  const statusSelect = container.querySelector("#modalStatusSelect");
+
+  closeButtons.forEach((button) =>
+    button.addEventListener("click", closeAppointmentDetailModal),
+  );
+
+  if (backdrop) {
+    backdrop.addEventListener("click", closeAppointmentDetailModal);
+  }
+
+  if (statusSelect) {
+    statusSelect.addEventListener("change", async () => {
+      const targetStatus = statusSelect.value;
+      const appointmentIdNum = statusSelect.dataset.id;
+      statusSelect.disabled = true;
+      try {
+        await updateAppointmentStatus(appointmentIdNum, targetStatus);
+        const appointment = appointmentMap.get(String(appointmentIdNum));
+        if (appointment) {
+          appointment.status = targetStatus;
+          statusSelect.className = `form-select select-flujo-cambio select-flujo-cambio--${slugify(targetStatus)}`;
+        }
+        await loadAppointments(appState.activeDay);
+      } catch (error) {
+        alert("No se pudo actualizar el estado.\n\n" + error.message);
+      } finally {
+        statusSelect.disabled = false;
+      }
+    });
+  }
+
+  if (deleteButton) {
+    deleteButton.addEventListener("click", async () => {
+      if (
+        !confirm(
+          "¿Estás seguro de que deseas eliminar permanentemente este turno?",
+        )
+      ) {
+        return;
+      }
+      try {
+        await removeAppointment(deleteButton.dataset.id);
+        closeAppointmentDetailModal();
+        await loadAppointments(appState.activeDay);
+      } catch (error) {
+        alert("No se pudo eliminar el turno.\n\n" + error.message);
+      }
+    });
+  }
 }
 
 function setupFilterListeners() {
@@ -180,64 +288,9 @@ function setupFilterListeners() {
 function attachAppointmentEvents() {
   // Ahora toda la fila (tarjeta) abre de forma interactiva el detalle/modal
   panelBody.querySelectorAll(".appointment-card__row").forEach((row) => {
-    row.addEventListener("click", (e) => {
+    row.addEventListener("click", () => {
       const card = row.closest(".appointment-card");
-      const isOpen = card.classList.contains("is-open");
-
-      panelBody
-        .querySelectorAll(".appointment-card")
-        .forEach((c) => c.classList.remove("is-open"));
-
-      if (!isOpen) {
-        card.classList.add("is-open");
-        loadTimelineHistory(card.dataset.id);
-      }
-    });
-  });
-
-  // Listener para cerrar el Bottom Sheet desde la 'X' en móvil
-  panelBody.querySelectorAll(".detail-close-mobile").forEach((btn) => {
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      const card = btn.closest(".appointment-card");
-      card.classList.remove("is-open");
-    });
-  });
-
-  panelBody.querySelectorAll(".select-flujo-cambio").forEach((select) => {
-    select.addEventListener("change", async (e) => {
-      e.stopPropagation(); // Evita re-aperturas del contenedor
-      const id = select.dataset.id;
-      const targetStatus = select.value;
-
-      select.disabled = true;
-      try {
-        await updateAppointmentStatus(id, targetStatus);
-        await loadAppointments(appState.activeDay);
-      } catch (error) {
-        alert("No se pudo actualizar el estado.\n\n" + error.message);
-      } finally {
-        select.disabled = false;
-      }
-    });
-  });
-
-  panelBody.querySelectorAll(".appointment-card__delete").forEach((btn) => {
-    btn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const card = btn.closest(".appointment-card");
-      const patientName = card.querySelector(
-        ".appointment-card__name",
-      ).textContent;
-
-      if (
-        confirm(
-          `¿Estás seguro de que deseas eliminar permanentemente el turno de ${patientName}?`,
-        )
-      ) {
-        await removeAppointment(btn.dataset.id);
-        loadAppointments(appState.activeDay);
-      }
+      openAppointmentDetailModal(card.dataset.id);
     });
   });
 }
@@ -248,7 +301,7 @@ async function loadTimelineHistory(id) {
   try {
     const history = await fetchTimelineHistory(id);
     if (!history || !history.length) {
-      container.innerHTML = `<p style="font-size:0.75rem; color:#888; margin:0;">Sin registros de flujo.</p>`;
+      container.innerHTML = `<p class="history-empty">Sin registros de flujo.</p>`;
       return;
     }
     container.innerHTML = history
@@ -258,6 +311,6 @@ async function loadTimelineHistory(id) {
       })
       .join("");
   } catch (err) {
-    container.innerHTML = `<p style="font-size:0.75rem; color:#dc2626; margin:0;">Error al cargar línea de tiempo.</p>`;
+    container.innerHTML = `<p class="history-error">Error al cargar línea de tiempo.</p>`;
   }
 }

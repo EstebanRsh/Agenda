@@ -9,18 +9,13 @@ const closeBtn = document.getElementById("panelClose");
 // Estado de la aplicación compartido en memoria de manera limpia
 export const appState = {
   activeDay: null,
-  currentFilterStatus: null,
 };
 
 // Inicialización de escuchas sobre el Calendario Primario
 document.querySelectorAll(".calendar__cell--active").forEach((cell) => {
   cell.addEventListener("click", () => {
     const date = cell.dataset.date;
-    if (
-      appState.activeDay === date &&
-      panel.classList.contains("is-open") &&
-      !appState.currentFilterStatus
-    ) {
+    if (appState.activeDay === date && panel.classList.contains("is-open")) {
       closePanel();
     } else {
       openPanelForDate(cell, date, null);
