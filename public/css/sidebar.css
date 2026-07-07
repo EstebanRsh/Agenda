@@ -233,12 +233,17 @@
 
   .app-viewport-container {
     flex-direction: column;
+    min-height: 100dvh;
   }
 
   .app-main-content {
-    padding: 1rem;
-    padding-top: calc(60px + 1rem);
+    padding: 0.75rem;
+    padding-top: calc(60px + 0.75rem);
     height: auto;
-    min-height: 100dvh;
+    min-height: calc(100dvh - 60px);
+  }
+
+  .app-layout {
+    margin-top: 0.5rem;
   }
 }

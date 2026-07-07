@@ -363,6 +363,39 @@
 
   .day-panel__body {
     padding: 1rem;
+    min-height: calc(100dvh - 60px - 8rem);
+  }
+
+  .app-layout {
+    width: 100%;
+    margin-top: 0.5rem;
+    padding: 0 0.5rem 0.5rem;
+  }
+
+  .calendar-wrapper,
+  .day-panel {
+    max-width: 100%;
+    margin: 0;
+    border-radius: 14px;
+  }
+
+  .day-panel {
+    min-height: calc(100dvh - 60px - 4rem);
+  }
+
+  .app-layout.panel-open .day-panel {
+    min-height: calc(100dvh - 60px - 4rem);
+  }
+
+  .calendar-wrapper {
+    width: 100%;
+  }
+
+  .app-layout.panel-open .calendar-wrapper {
+    opacity: 0;
+    visibility: hidden;
+    transform: none;
+    pointer-events: none;
   }
 
   /* Tarjetas Operativas a Doble Línea */
@@ -394,17 +427,6 @@
     font-size: 0.8rem;
   }
 }
-
-/* Animación de entrada nativa para Modal Completo */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
 
 /* Animación de entrada nativa para Modal Completo */
 @keyframes modalFadeIn {

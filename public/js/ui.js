@@ -126,18 +126,17 @@ function openAppointmentDetailModal(appointmentId) {
   closeAppointmentDetailModal();
 
   const container = document.createElement("div");
-  container.className = "appointment-detail-modal-container";
+  container.className = "modal-overlay is-open";
   container.innerHTML = `
-    <div class="appointment-detail-backdrop"></div>
-    <div class="appointment-detail-dialog" role="dialog" aria-modal="true" aria-label="Detalle del turno">
-      <div class="appointment-detail-header">
-        <div class="appointment-detail-title">
-          <span>${appointment.time_start.substring(0, 5)}</span>
-          <strong>${appointment.patient_name}</strong>
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Detalle del turno">
+      <div class="modal__header appointment-detail-header">
+        <div>
+          <span class="appointment-detail-meta">${appointment.time_start.substring(0, 5)}</span>
+          <h3 class="modal__title">${appointment.patient_name}</h3>
         </div>
-        <button type="button" class="appointment-detail-close" aria-label="Cerrar detalle">&times;</button>
+        <button type="button" class="modal__close appointment-detail-close" aria-label="Cerrar detalle">&times;</button>
       </div>
-      <div class="appointment-detail-body">
+      <div class="modal__body appointment-detail-body">
         <section class="detail-grid">
           <div class="detail-card">
             <span class="detail-label">Fecha</span>
@@ -183,7 +182,7 @@ function openAppointmentDetailModal(appointmentId) {
           </div>
         </section>
       </div>
-      <div class="appointment-detail-footer">
+      <div class="modal__footer appointment-detail-footer">
         <button type="button" class="btn btn--ghost appointment-detail-close-btn">Cerrar</button>
         <button type="button" class="btn btn--danger appointment-detail-delete" data-id="${appointment.id}">Eliminar Turno</button>
       </div>
@@ -205,7 +204,6 @@ function closeAppointmentDetailModal() {
 }
 
 function attachDetailModalEvents(container, appointmentId) {
-  const backdrop = container.querySelector(".appointment-detail-backdrop");
   const closeButtons = container.querySelectorAll(
     ".appointment-detail-close, .appointment-detail-close-btn",
   );
@@ -216,9 +214,11 @@ function attachDetailModalEvents(container, appointmentId) {
     button.addEventListener("click", closeAppointmentDetailModal),
   );
 
-  if (backdrop) {
-    backdrop.addEventListener("click", closeAppointmentDetailModal);
-  }
+  container.addEventListener("click", (event) => {
+    if (event.target === container) {
+      closeAppointmentDetailModal();
+    }
+  });
 
   if (statusSelect) {
     statusSelect.addEventListener("change", async () => {
