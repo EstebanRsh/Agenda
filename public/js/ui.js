@@ -13,6 +13,19 @@ const panelDate = document.getElementById("panelDate");
 const panelBody = document.getElementById("panelBody");
 const layout = document.querySelector(".app-layout");
 const appointmentMap = new Map();
+
+function escapeHtml(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
 let activeDetailModal = null;
 
 // Variables internas de control para persistir los filtros en la sesión de la vista
@@ -101,12 +114,12 @@ function renderAppointmentsList(appointments) {
       <div class="appointment-card" data-id="${a.id}">
         <div class="appointment-card__row">
           <div class="appointment-card__col-left">
-            <span class="appointment-card__time">${a.time_start.substring(0, 5)}</span>
-            <span class="appointment-card__name">${a.patient_name}</span>
+            <span class="appointment-card__time">${escapeHtml(a.time_start.substring(0, 5))}</span>
+            <span class="appointment-card__name">${escapeHtml(a.patient_name)}</span>
           </div>
           <div class="appointment-card__col-right">
-            <span class="appointment-card__doctor">${a.doctor || "Sin asignar"}</span>
-            <span class="status-badge status-badge--${sluggedStatus}">${a.status}</span>
+            <span class="appointment-card__doctor">${escapeHtml(a.doctor || "Sin asignar")}</span>
+            <span class="status-badge status-badge--${sluggedStatus}">${escapeHtml(a.status)}</span>
           </div>
         </div>
       </div>
@@ -131,8 +144,8 @@ function openAppointmentDetailModal(appointmentId) {
     <div class="modal" role="dialog" aria-modal="true" aria-label="Detalle del turno">
       <div class="modal__header appointment-detail-header">
         <div>
-          <span class="appointment-detail-meta">${appointment.time_start.substring(0, 5)}</span>
-          <h3 class="modal__title">${appointment.patient_name}</h3>
+          <span class="appointment-detail-meta">${escapeHtml(appointment.time_start.substring(0, 5))}</span>
+          <h3 class="modal__title">${escapeHtml(appointment.patient_name)}</h3>
         </div>
         <button type="button" class="modal__close appointment-detail-close" aria-label="Cerrar detalle">&times;</button>
       </div>
@@ -140,27 +153,27 @@ function openAppointmentDetailModal(appointmentId) {
         <section class="detail-grid">
           <div class="detail-card">
             <span class="detail-label">Fecha</span>
-            <span class="detail-value">${formatDate(appState.activeDay)}</span>
+            <span class="detail-value">${escapeHtml(formatDate(appState.activeDay))}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Profesional</span>
-            <span class="detail-value">${appointment.doctor || "Sin asignar"}</span>
+            <span class="detail-value">${escapeHtml(appointment.doctor || "Sin asignar")}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Teléfono</span>
-            <span class="detail-value">${appointment.phone || "No registrado"}</span>
+            <span class="detail-value">${escapeHtml(appointment.phone || "No registrado")}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Obra Social</span>
-            <span class="detail-value">${appointment.social_work || "Particular"}</span>
+            <span class="detail-value">${escapeHtml(appointment.social_work || "Particular")}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Monto</span>
-            <span class="detail-value">$${appointment.payment || "0"}</span>
+            <span class="detail-value">$${escapeHtml(appointment.payment || "0")}</span>
           </div>
           <div class="detail-card">
             <span class="detail-label">Estado</span>
-            <select id="modalStatusSelect" class="form-select select-flujo-cambio select-flujo-cambio--${slugify(appointment.status)}" data-id="${appointment.id}">
+            <select id="modalStatusSelect" class="form-select select-flujo-cambio select-flujo-cambio--${slugify(appointment.status)}" data-id="${escapeHtml(appointment.id)}">
               <option value="Reservado" ${appointment.status === "Reservado" ? "selected" : ""}>Reservado</option>
               <option value="En sala de espera" ${appointment.status === "En sala de espera" ? "selected" : ""}>En sala de espera</option>
               <option value="En atención" ${appointment.status === "En atención" ? "selected" : ""}>En atención</option>
@@ -171,11 +184,11 @@ function openAppointmentDetailModal(appointmentId) {
           </div>
           <div class="detail-card detail-card-full">
             <span class="detail-label">Notas</span>
-            <span class="detail-value">${appointment.notes || "Sin observaciones"}</span>
+            <span class="detail-value">${escapeHtml(appointment.notes || "Sin observaciones")}</span>
           </div>
         </section>
 
-        <section class="appointment-history-log" id="histLog-${appointment.id}">
+        <section class="appointment-history-log" id="histLog-${escapeHtml(appointment.id)}">
           <div class="history-title">Historial de estado</div>
           <div class="history-items">
             <p class="history-placeholder">Cargando historial de flujo...</p>
@@ -184,7 +197,7 @@ function openAppointmentDetailModal(appointmentId) {
       </div>
       <div class="modal__footer appointment-detail-footer">
         <button type="button" class="btn btn--ghost appointment-detail-close-btn">Cerrar</button>
-        <button type="button" class="btn btn--danger appointment-detail-delete" data-id="${appointment.id}">Eliminar Turno</button>
+        <button type="button" class="btn btn--danger appointment-detail-delete" data-id="${escapeHtml(appointment.id)}">Eliminar Turno</button>
       </div>
     </div>
   `;
@@ -307,7 +320,7 @@ async function loadTimelineHistory(id) {
     container.innerHTML = history
       .map((h) => {
         const time = h.changed_at.slice(11, 16);
-        return `<div class="hist-item shadow-text">• <strong>${time} hs:</strong> ${h.status_from ? h.status_from : "Turno creado"} → <span>${h.status_to}</span></div>`;
+        return `<div class="hist-item shadow-text">• <strong>${escapeHtml(time)} hs:</strong> ${h.status_from ? escapeHtml(h.status_from) : "Turno creado"} → <span>${escapeHtml(h.status_to)}</span></div>`;
       })
       .join("");
   } catch (err) {

@@ -36,6 +36,13 @@ class AppointmentController
                 'time_end'     => $_POST['time_end']          ?? '',
                 'status'       => trim($_POST['status']       ?? 'Reservado'),
             ];
+            // Validación server-side mínima de fecha y horarios
+            $validationError = $this->validateAppointmentDateTime($data['date'], $data['time_start'], $data['time_end']);
+            if ($validationError !== true) {
+                // Devolver formato de error compatible con frontend
+                $this->json(['success' => false, 'error' => $validationError]);
+            }
+
             $this->json(['success' => $this->model->create($data)]);
         }
 
@@ -63,5 +70,53 @@ class AppointmentController
         header('Content-Type: application/json');
         echo json_encode($data);
         exit;
+    }
+
+    /**
+     * Validates date and time inputs for an appointment.
+     * Returns true when valid, or a string message describing the error.
+     */
+    private function validateAppointmentDateTime(string $date, string $timeStart, string $timeEnd)
+    {
+        // Date validation: expect YYYY-MM-DD
+        $date = trim($date);
+        if ($date === '') {
+            return 'La fecha es obligatoria.';
+        }
+        $d = \DateTime::createFromFormat('Y-m-d', $date);
+        if (!($d && $d->format('Y-m-d') === $date)) {
+            return 'Formato de fecha inválido. Use AAAA-MM-DD.';
+        }
+
+        // Time validation: accept HH:MM or HH:MM:SS
+        $timeStart = trim($timeStart);
+        $timeEnd = trim($timeEnd);
+        if ($timeStart === '') {
+            return 'La hora de inicio es obligatoria.';
+        }
+        if ($timeEnd === '') {
+            return 'La hora de fin es obligatoria.';
+        }
+
+        $parseTime = function (string $t) {
+            // Accept HH:MM or HH:MM:SS
+            if (!preg_match('/^(\d{1,2}):(\d{2})(:(\d{2}))?$/', $t, $m)) {
+                return false;
+            }
+            $h = (int)$m[1];
+            $i = (int)$m[2];
+            $s = isset($m[4]) ? (int)$m[4] : 0;
+            if ($h < 0 || $h > 23 || $i < 0 || $i > 59 || $s < 0 || $s > 59) return false;
+            return $h * 3600 + $i * 60 + $s;
+        };
+
+        $sSec = $parseTime($timeStart);
+        if ($sSec === false) return 'Hora de inicio inválida. Use HH:MM o HH:MM:SS.';
+        $eSec = $parseTime($timeEnd);
+        if ($eSec === false) return 'Hora de fin inválida. Use HH:MM o HH:MM:SS.';
+
+        if ($sSec >= $eSec) return 'La hora de inicio debe ser anterior a la hora de fin.';
+
+        return true;
     }
 }
